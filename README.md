@@ -12,7 +12,7 @@
 python3 -m http.server 8080
 ```
 
-На сервере — отдать `index.html` любым веб-сервером (nginx, Caddy, GitHub Pages).
+На сервере — сайт и бот одной командой `docker compose up -d --build`, подробно в [DEPLOY.md](DEPLOY.md).
 
 ## Данные
 

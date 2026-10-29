@@ -211,4 +211,13 @@ const commands = lang => [
 await bot.api.setMyCommands(commands('ru'));
 await bot.api.setMyCommands(commands('ky'), { language_code: 'ky' });
 scheduleAlerts(bot);
+
+// docker stop / перезапуск: дожидаемся сохранения базы и отпускаем long polling
+for (const sig of ['SIGINT', 'SIGTERM']) process.once(sig, async () => {
+  console.log(`Получен ${sig}, останавливаюсь…`);
+  await save();
+  await bot.stop();
+  process.exit(0);
+});
+
 bot.start({ onStart: me => console.log(`AgroPulse-бот запущен: @${me.username}`) });
