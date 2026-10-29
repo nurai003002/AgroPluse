@@ -1,3 +1,6 @@
 # Локальные бэкапы прошлых версий
 index.backup-*.html
 .DS_Store
+
+# Локальные настройки compose (например, WEB_PORT)
+.env
