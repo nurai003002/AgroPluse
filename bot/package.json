@@ -1,0 +1,15 @@
+{
+  "name": "agropulse-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telegram-бот AgroPulse: советы фермеру по данным NASA POWER и прогнозу погоды",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/index.js",
+    "try": "node --env-file-if-exists=.env src/try.js"
+  },
+  "dependencies": {
+    "grammy": "1.46.0"
+  }
+}
