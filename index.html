@@ -1,0 +1,2758 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroPulse — спутник NASA подскажет, когда сеять</title>
+<meta name="description" content="AgroPulse переводит данные спутников NASA в простые советы фермеру: где сажать, когда сеять и когда беречь посевы. В Telegram или по SMS.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+  /* ===== Дизайн-токены ===== */
+  :root {
+    --green: #2E7D32;
+    --green-dark: #1B5E20;
+    --green-50: #EEF6EE;
+    --green-100: #DCEFD9;
+    --yellow: #F9A825;
+    --yellow-50: #FFF8E1;
+    --red: #D32F2F;
+    --red-50: #FDECEA;
+    --orange: #EF6C00;
+    --orange-50: #FFF3E0;
+    --frost: #3F51B5;
+    --frost-50: #E8EAF6;
+    --blue: #1E88E5;
+    --sky-50: #EAF4FD;
+    --text: #1C2620;
+    --muted: #5E6B63;
+    --line: #E2E8E3;
+    --bg: #F6F8F6;
+    --card: #FFFFFF;
+    --radius: 20px;
+    --shadow: 0 1px 2px rgba(20, 40, 25, .04), 0 8px 28px rgba(20, 40, 25, .07);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    --display: "Nunito", "Inter", -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.5; font-size: 16px; }
+  h1, h2, h3, p { margin: 0; }
+  h1, h2, h3 { font-family: var(--display); }
+  b { font-weight: 600; }
+  a { color: var(--green-dark); }
+
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
+
+  /* ===== Шапка ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 1100;
+    background: rgba(255, 255, 255, .94);
+    backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding-top: 8px; padding-bottom: 2px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; }
+  .brand-logo { width: 36px; height: 36px; flex: none; }
+  .brand-name { font-family: var(--display); font-size: 22px; font-weight: 900; letter-spacing: -.01em; }
+  .brand-name span { color: var(--green); }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; }
+  .lang button {
+    border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; color: var(--muted); cursor: pointer; transition: background .2s, color .2s;
+  }
+  .lang button[aria-pressed="true"] { background: var(--green); color: #fff; }
+  .subnav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .subnav a {
+    flex: none; text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; transition: background .2s, color .2s;
+  }
+  .subnav a:hover, .subnav a.active { background: var(--green-50); color: var(--green-dark); }
+
+  /* ===== Кнопки ===== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+    border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 600; background: var(--yellow); color: #3A2A00;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { box-shadow: 0 6px 18px rgba(249, 168, 37, .35); }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 16px; height: 16px; flex: none; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { box-shadow: 0 6px 18px rgba(46, 125, 50, .3); }
+  .btn-ghost { background: #fff; color: var(--text); border: 1.5px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--green); box-shadow: none; }
+  .btn-big { padding: 14px 24px; font-size: 16px; }
+  .btn[disabled] { opacity: .6; cursor: progress; }
+
+  /* ===== Полосы-секции ===== */
+  .band { padding: 56px 0; scroll-margin-top: 100px; }
+  .band.alt { background: #fff; }
+  .band.sky { background: var(--sky-50); }
+  .band-head { margin-bottom: 24px; max-width: 760px; }
+  .kicker { font-size: 13px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+  .band-head h2 { font-size: clamp(26px, 3.6vw, 36px); line-height: 1.15; margin-top: 6px; font-weight: 900; }
+  .band-head p { color: var(--muted); font-size: 16px; margin-top: 8px; }
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+  .band.alt .card { box-shadow: 0 0 0 1px var(--line); }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  .refresh { animation: refresh .5s ease; }
+  @keyframes refresh { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .how-link { font-size: 13px; font-weight: 600; color: var(--green-dark); text-decoration: none; }
+  .how-link:hover { text-decoration: underline; }
+
+  /* ===== Первый экран ===== */
+  .hero { padding: 40px 0 56px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 32px; align-items: center; }
+  .demo-badge {
+    display: inline-block; font-size: 13px; font-weight: 700; color: var(--green-dark);
+    background: var(--green-100); padding: 5px 12px; border-radius: 999px;
+  }
+  .hero h1 { font-size: clamp(32px, 5.2vw, 54px); line-height: 1.05; letter-spacing: -.01em; margin-top: 14px; font-weight: 900; }
+  .hero h1 em { font-style: normal; color: var(--green); }
+  .hero-text { font-size: 18px; color: var(--muted); margin-top: 16px; max-width: 560px; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .facts span { background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); }
+  .hero-art-wrap { position: relative; }
+  .hero-art { width: 100%; height: auto; display: block; }
+  .sat { animation: float 5s ease-in-out infinite; transform-origin: center; }
+  .beam { animation: beam 3s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes beam { 0%, 100% { opacity: .12; } 50% { opacity: .3; } }
+  .hero-sms {
+    position: absolute; right: 4%; bottom: 6%; width: 58%; max-width: 270px;
+    background: #fff; border-radius: 18px 18px 4px 18px; padding: 12px 14px; font-size: 14px;
+    box-shadow: 0 12px 30px rgba(20, 40, 25, .18); animation: pop-in .6s .4s ease both;
+  }
+  .hero-sms small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+  @keyframes pop-in { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+
+  /* ===== Идея ===== */
+  .story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .story-card { position: relative; }
+  .story-emoji { font-size: 40px; line-height: 1; }
+  .story-card h3 { font-size: 20px; margin-top: 12px; }
+  .story-card p { color: var(--muted); margin-top: 6px; }
+  .story-card.bad { background: var(--red-50); }
+  .story-card.good { background: var(--green-50); }
+  .story-card:not(:last-child)::after {
+    content: "→"; position: absolute; right: -14px; top: 50%; transform: translate(50%, -50%);
+    font-size: 22px; font-weight: 900; color: var(--green); z-index: 1;
+  }
+  .persona { font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .questions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+  .q-card { display: flex; gap: 14px; align-items: flex-start; }
+  .q-icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 26px; flex: none; background: var(--yellow-50); }
+  .q-card h3 { font-size: 19px; }
+  .q-card p { color: var(--muted); font-size: 15px; margin-top: 4px; }
+  .sub-title { font-family: var(--display); font-size: 22px; font-weight: 900; margin-top: 40px; }
+
+  /* ===== Каналы: Telegram и SMS ===== */
+  .channels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .channel { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+  .channel h3 { font-size: 20px; }
+  .channel ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; font-size: 15px; }
+  .channel li { display: flex; gap: 8px; }
+  .channel li::before { content: "✓"; color: var(--green); font-weight: 900; }
+  .free-tag { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--green-dark); background: var(--green-100); padding: 4px 10px; border-radius: 999px; }
+
+  .phone { width: 250px; background: #1B1F23; border-radius: 34px; padding: 10px; box-shadow: 0 18px 40px rgba(20, 40, 25, .22); flex: none; }
+  .tg-screen { border-radius: 26px; overflow: hidden; background: #DDE7D8; }
+  .tg-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fff; }
+  .tg-ava { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--green); font-size: 18px; }
+  .tg-top b { display: block; font-size: 14px; line-height: 1.2; }
+  .tg-top small { color: var(--muted); font-size: 12px; }
+  .tg-chat { padding: 12px 10px 14px; display: grid; gap: 8px; min-height: 380px; align-content: end; font-size: 13px; line-height: 1.4; }
+  .bubble { max-width: 92%; padding: 8px 10px 6px; border-radius: 14px; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); position: relative; }
+  .bubble.me { justify-self: end; background: #E2F7CB; border-bottom-right-radius: 4px; }
+  .bubble.bot { justify-self: start; background: #fff; border-bottom-left-radius: 4px; }
+  .bubble .line { margin-top: 3px; }
+  .bubble .time { display: block; text-align: right; font-size: 10px; color: #7A8B80; margin-top: 2px; }
+  .tg-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 92%; }
+  .tg-btns span { background: rgba(255, 255, 255, .75); border-radius: 8px; padding: 6px 4px; text-align: center; font-size: 11.5px; font-weight: 600; color: #2A6A99; }
+  .tg-btns span:last-child { grid-column: 1 / -1; }
+
+  .dumbphone {
+    width: 200px; flex: none; background: linear-gradient(160deg, #3A4048, #22262B); border-radius: 30px 30px 44px 44px;
+    padding: 18px 14px 20px; box-shadow: 0 18px 40px rgba(20, 40, 25, .22);
+  }
+  .dumb-brand { text-align: center; color: #9AA3AD; font-size: 10px; font-weight: 700; letter-spacing: .2em; margin-bottom: 8px; }
+  .lcd {
+    background: #C5D6A0; border-radius: 8px; padding: 10px; min-height: 196px; color: #20301A;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.35;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, .25);
+  }
+  .lcd-head { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(32, 48, 26, .4); padding-bottom: 4px; margin-bottom: 6px; font-weight: 700; }
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; }
+  .keys span { background: #4A525C; color: #E3E7EA; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 700; padding: 6px 0; }
+  .sms-count { margin-top: 10px; font-size: 13px; color: var(--muted); font-weight: 600; }
+
+  .when { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+
+  /* Что здесь вырастет лучше всего */
+  .best { margin-top: 12px; }
+  .best-title { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .best-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .best-list button {
+    display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 10px; color: var(--text); transition: border-color .2s;
+  }
+  .best-list button:hover { border-color: var(--green); }
+  .best-list button[aria-pressed="true"] { border-color: var(--green); background: var(--green-50); }
+  .best-list i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .best-list small { color: var(--muted); font-weight: 600; }
+
+  /* Больные участки поля */
+  .zones-card { margin-top: 16px; display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; scroll-margin-top: 110px; }
+  .zones-card h3 { font-size: 19px; }
+  .zones-hint { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .zones-svg { width: 100%; max-width: 300px; aspect-ratio: 1; display: block; border-radius: 14px; overflow: hidden; background: var(--bg); }
+  .seg { display: inline-flex; background: var(--bg); border-radius: 999px; padding: 3px; margin-top: 10px; }
+  .seg button { border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; color: var(--muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .zones-result { margin-top: 14px; padding: 14px 16px; border-radius: 14px; font-size: 15px; }
+  .zones-result.found { background: var(--red-50); }
+  .zones-result.clean { background: var(--green-50); }
+  .zones-result p + p { margin-top: 6px; }
+  .zones-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; color: var(--muted); align-items: center; }
+  .zones-legend .ramp { width: 90px; height: 10px; border-radius: 999px; background: linear-gradient(90deg, #D32F2F, #F9A825, #C0CA33, #43A047, #1B5E20); }
+  .zones-legend .dmg { width: 12px; height: 12px; border: 2px solid #B71C1C; border-radius: 3px; }
+  .zones-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .when div { background: #fff; border-radius: 16px; padding: 14px; font-size: 15px; box-shadow: var(--shadow); }
+  .when b { display: block; font-size: 26px; line-height: 1; margin-bottom: 8px; }
+  .web-note { margin-top: 20px; display: flex; gap: 14px; align-items: center; }
+  .web-note .q-icon { background: var(--sky-50); }
+  .live-note { font-size: 14px; color: var(--muted); margin: -8px 0 20px; display: flex; align-items: center; gap: 8px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-100); animation: blink 1.6s infinite; flex: none; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  /* ===== Демо: карта ===== */
+  .field-grid {
+    display: grid; grid-template-columns: 350px 1fr; gap: 16px;
+    grid-template-areas: "ctrl map" "point map"; grid-template-rows: auto 1fr;
+  }
+  .ctrl-card { grid-area: ctrl; display: grid; gap: 14px; }
+  .point-card { grid-area: point; transition: opacity .25s; }
+  .point-card.loading { opacity: .45; }
+  .map-card { grid-area: map; padding: 0; overflow: hidden; min-height: 560px; position: relative; isolation: isolate; }
+  .field-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .search { display: flex; gap: 8px; }
+  .search input {
+    flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 10px 14px;
+    border: 1.5px solid var(--line); border-radius: 12px; background: #fff; color: var(--text);
+  }
+  .search input:focus, select:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(46, 125, 50, .15); }
+  .form-msg { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .form-msg:empty { display: none; }
+  .form-msg.error { color: var(--red); }
+  .ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: ""; position: absolute; right: 16px; top: 50%; width: 8px; height: 8px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+    transform: translateY(-70%) rotate(45deg); pointer-events: none;
+  }
+  select {
+    width: 100%; appearance: none; -webkit-appearance: none; font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+    padding: 11px 36px 11px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer;
+  }
+  .point-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .point-name { font-family: var(--display); font-weight: 900; font-size: 19px; min-width: 0; }
+  .suit { margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--bg); }
+  .suit-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .suit-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+  .suit-score { font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+  .suit-score small { font-size: 16px; color: var(--muted); margin-left: 2px; }
+  .suit-reason { font-size: 14px; margin-top: 6px; }
+  .suit-bar { height: 6px; border-radius: 999px; background: var(--line); margin-top: 10px; overflow: hidden; }
+  .suit-bar i { display: block; height: 100%; border-radius: inherit; transition: width .6s ease; }
+  .field-info { margin: 14px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .field-info div { min-width: 0; }
+  .field-info dt { font-size: 12px; color: var(--muted); }
+  .field-info dd { margin: 2px 0 0; font-weight: 600; font-size: 15px; }
+  .top-places { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .top-places h3 { font-size: 16px; }
+  .top-hint { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .top-places ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .top-places button {
+    width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; font-size: 13px; color: var(--text);
+    background: #fff; cursor: pointer; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 10px; transition: border-color .2s;
+  }
+  .top-places button:hover { border-color: var(--green); }
+  .top-places .pct { font-weight: 700; font-size: 15px; min-width: 50px; white-space: nowrap; }
+  .top-places .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  #map { position: absolute; inset: 0; background: #E9EFEA; }
+  #map.leaflet-container { cursor: crosshair; }
+  .leaflet-container { font-family: var(--font); }
+  .fallback { padding: 24px; color: var(--muted); font-size: 14px; }
+  .map-ui { position: absolute; z-index: 1000; pointer-events: none; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+  .map-ui > * { pointer-events: auto; }
+  .map-ui.top { top: 10px; justify-content: flex-end; }
+  .map-ui.bottom { bottom: 26px; }
+  .map-pill { background: rgba(255, 255, 255, .95); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); padding: 8px 12px; font-size: 13px; }
+  .layer-toggle { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: inherit; font-weight: 600; color: var(--text); }
+  .switch { width: 32px; height: 18px; border-radius: 999px; background: #B0BEC5; position: relative; transition: background .2s; flex: none; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .layer-toggle[aria-pressed="true"] .switch { background: var(--green); }
+  .layer-toggle[aria-pressed="true"] .switch::after { transform: translateX(14px); }
+  .map-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .map-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .map-status { position: absolute; z-index: 1000; top: 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 140px); text-align: center; color: var(--muted); }
+  .map-status:empty { display: none; }
+  .map-status.busy::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px;
+    border: 2px solid var(--green); border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pin-dot { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(30, 136, 229, .25), 0 2px 6px rgba(0, 0, 0, .3); }
+
+  /* ===== Демо: совет ===== */
+  .advice-title { font-family: var(--display); font-size: 22px; font-weight: 900; margin: 32px 0 14px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .tile {
+    display: block; text-decoration: none; color: inherit; background: var(--card); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 16px; border-top: 5px solid var(--line); transition: transform .15s, box-shadow .15s;
+  }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(20, 40, 25, .05), 0 12px 30px rgba(20, 40, 25, .1); }
+  .tile-label { font-size: 13px; color: var(--muted); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+  .tile-value { font-size: 20px; font-weight: 700; margin-top: 6px; line-height: 1.25; }
+  .tile-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .tile.good { border-top-color: var(--green); } .tile.mid { border-top-color: var(--yellow); }
+  .tile.bad { border-top-color: var(--red); } .tile.blue { border-top-color: var(--blue); } .tile.frost { border-top-color: var(--frost); }
+  .tone-good { color: var(--green-dark); background: var(--green-50); }
+  .tone-mid  { color: #8A5A00; background: var(--yellow-50); }
+  .tone-bad  { color: var(--red); background: var(--red-50); }
+  .tone-blue { color: #0D5BA8; background: #E3F2FD; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+  .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .detail-grid .card { scroll-margin-top: 110px; }
+  .detail-grid h3 { font-size: 19px; margin-bottom: 12px; }
+  .sow-summary { padding: 16px 18px; border-radius: 14px; background: var(--green-50); border-left: 4px solid var(--green); font-size: 16px; }
+  .sow-summary.cold { background: var(--frost-50); border-left-color: var(--frost); }
+  .sow-summary b { color: var(--green-dark); }
+  .sow-summary .sow-window { margin-top: 4px; font-size: 18px; }
+  .sow-note { margin-top: 8px; font-size: 13px; color: var(--muted); }
+  details.more { margin-top: 14px; }
+  details.more summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--green-dark); }
+  details.more p { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .chart-box { position: relative; height: 260px; margin-top: 10px; }
+
+  .warnings { display: grid; gap: 8px; margin-bottom: 14px; }
+  .warning { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+  .warning-icon { font-size: 18px; line-height: 1.3; }
+  .warning.frost { background: var(--frost-50); color: #1A237E; }
+  .warning.heat { background: var(--red-50); color: #8E1B1B; }
+  .warning.drought { background: var(--orange-50); color: #7A3A00; }
+  .warning.ok { background: var(--green-50); color: var(--green-dark); }
+  .forecast-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .day {
+    background: var(--bg); border-radius: 12px; padding: 10px 4px 8px; text-align: center; border-top: 4px solid var(--green);
+    animation: pop .45s ease both; animation-delay: calc(var(--i) * 45ms); display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+  .day.frost { border-top-color: var(--frost); } .day.heat { border-top-color: var(--red); } .day.drought { border-top-color: var(--orange); }
+  .day-name { font-weight: 700; font-size: 13px; }
+  .day-date { font-size: 11px; color: var(--muted); }
+  .day-icon { font-size: 22px; line-height: 1.2; margin: 2px 0; }
+  .day-temp { font-weight: 700; font-size: 14px; }
+  .day-temp span { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .day-rain { font-size: 11px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ===== Откуда данные ===== */
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .pipe-step { position: relative; }
+  .pipe-step:not(:last-child)::after {
+    content: "→"; position: absolute; right: -14px; top: 50%; transform: translate(50%, -50%);
+    font-size: 20px; color: var(--green); font-weight: 900; z-index: 1;
+  }
+  .pipe-icon { font-size: 34px; line-height: 1; }
+  .pipe-step h3 { font-size: 18px; margin-top: 10px; }
+  .pipe-step p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .ndvi-demo { margin-top: 16px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; align-items: center; }
+  .ndvi-demo h3 { font-size: 20px; }
+  .ndvi-demo p { font-size: 15px; color: var(--muted); margin-top: 8px; }
+  .ndvi-demo input[type="range"] { width: 100%; margin-top: 18px; accent-color: var(--green); }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .ndvi-viz { display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: center; }
+  .ndvi-viz svg { width: 110px; height: 110px; }
+  .bars { display: grid; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 1fr 44px; gap: 4px 8px; font-size: 13px; align-items: center; }
+  .bar-row span { grid-column: 1 / -1; color: var(--muted); }
+  .bar { height: 12px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: inherit; transition: width .2s; }
+  .bar-row b { text-align: right; }
+  .formula { grid-column: 1 / -1; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .formula code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .missions-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .mission { scroll-margin-top: 120px; transition: box-shadow .3s; }
+  .mission:target { box-shadow: 0 0 0 3px var(--green), var(--shadow); }
+  .mission-head { display: flex; gap: 12px; align-items: center; }
+  .mission-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--green-50); font-size: 22px; flex: none; }
+  .mission-head h3 { font-size: 19px; }
+  .mission-sub { font-size: 13px; color: var(--muted); }
+  .mission-q { margin-top: 14px; display: inline-block; font-weight: 700; font-size: 15px; background: var(--yellow-50); color: #6D4700; padding: 6px 12px; border-radius: 10px; }
+  .mission dl { margin: 12px 0 0; display: grid; gap: 8px; }
+  .mission dt { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .mission dd { margin: 0; font-size: 14px; }
+  .mission-foot { margin-top: 12px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .honest { margin-top: 16px; background: var(--frost-50); border-radius: var(--radius); padding: 18px 20px; font-size: 14px; }
+  .honest h3 { font-size: 16px; margin-bottom: 4px; }
+
+  /* ===== Стоимость ===== */
+  .cost-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .cost-card .q-icon { background: var(--green-50); }
+  .cost-card h3 { font-size: 17px; margin-top: 12px; }
+  .cost-big { font-family: var(--display); font-size: 30px; font-weight: 900; color: var(--green); line-height: 1.1; margin-top: 4px; }
+  .cost-big.small { font-size: 22px; color: var(--orange); }
+  .cost-card p { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: center; margin-top: 14px; }
+  .flow-step { background: #fff; border-radius: 16px; padding: 16px; text-align: center; box-shadow: 0 0 0 1px var(--line); font-size: 14px; }
+  .flow-step b { display: block; font-size: 32px; line-height: 1; margin-bottom: 8px; }
+  .flow-arrow { font-size: 22px; font-weight: 900; color: var(--green); }
+  .who-pays { margin-top: 16px; padding: 16px 18px; border-radius: 16px; background: var(--yellow-50); font-size: 15px; }
+
+  /* ===== Что дальше ===== */
+  .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: rm; }
+  .rm-step { border-top: 5px solid var(--line); }
+  .rm-step.now { border-top-color: var(--green); }
+  .rm-step.pilot { border-top-color: var(--yellow); }
+  .rm-step.later { border-top-color: var(--blue); }
+  .rm-step h3 { font-size: 19px; }
+  .rm-step p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+  .rm-tag { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+
+  footer { padding: 32px 0 40px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  /* ===== Адаптивность ===== */
+  @media (max-width: 1000px) {
+    .channels { grid-template-columns: 1fr; }
+    .summary-grid, .cost-grid { grid-template-columns: 1fr 1fr; }
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    .pipe-step:nth-child(2)::after { display: none; }
+    .ndvi-demo, .detail-grid, .zones-card { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 820px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .field-grid { grid-template-columns: 1fr; grid-template-areas: "ctrl" "map" "point"; grid-template-rows: auto; }
+    .map-card { min-height: 420px; }
+    .story, .questions, .missions-grid, .roadmap { grid-template-columns: 1fr; }
+    .story-card:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -14px; transform: translate(50%, 50%); }
+    .flow { grid-template-columns: 1fr; }
+    .flow-arrow { transform: rotate(90deg); text-align: center; }
+  }
+  @media (max-width: 560px) {
+    .band { padding: 40px 0; }
+    .channel { grid-template-columns: 1fr; justify-items: center; }
+    .channel > div:last-child { justify-self: stretch; }
+    .summary-grid, .pipeline, .cost-grid { grid-template-columns: 1fr; }
+    .pipe-step::after { display: none; }
+    .card { padding: 18px; }
+    .map-card { min-height: 380px; }
+    .map-ui.bottom { flex-direction: column; align-items: flex-start; }
+    .map-status { max-width: calc(100% - 70px); left: auto; right: 10px; transform: none; top: 56px; }
+    .ndvi-viz { grid-template-columns: 1fr; }
+    .ndvi-viz svg { margin: 0 auto; }
+    .forecast-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+    .forecast-grid .day { flex: 0 0 74px; scroll-snap-align: start; }
+    .hero-sms { width: 72%; font-size: 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal, .refresh, .day, .sat, .beam, .hero-sms, .live-dot { animation: none !important; transition: none !important; opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Шапка ===== -->
+<header class="topbar">
+  <div class="wrap topbar-row">
+    <a class="brand" href="#top">
+      <svg class="brand-logo" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="11" fill="#2E7D32"/>
+        <path d="M11 27c0-9 6-15 18-16-1 11-7 17-16 17" fill="#A5D6A7"/>
+        <path d="M8 22h6l3-6 4 11 3-6h8" fill="none" stroke="#F9A825" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">Agro<span>Pulse</span></span>
+    </a>
+    <div class="lang" role="group" aria-label="Язык / Тил">
+      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+      <button type="button" data-lang="ky" aria-pressed="false">KG</button>
+    </div>
+  </div>
+  <nav class="wrap subnav" id="subnav">
+    <a href="#sec-idea" data-i18n="navIdea"></a>
+    <a href="#sec-channels" data-i18n="navChannels"></a>
+    <a href="#sec-demo" data-i18n="navDemo"></a>
+    <a href="#sec-nasa" data-i18n="navNasa"></a>
+    <a href="#sec-cost" data-i18n="navCost"></a>
+    <a href="#sec-next" data-i18n="navNext"></a>
+  </nav>
+</header>
+
+<main id="top">
+  <!-- ===== Первый экран ===== -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="reveal">
+        <span class="demo-badge" data-i18n="heroBadge"></span>
+        <h1 id="heroTitle"></h1>
+        <p class="hero-text" data-i18n="heroText"></p>
+        <div class="hero-cta">
+          <a class="btn btn-green btn-big" href="#sec-demo" data-i18n="heroTry"></a>
+          <a class="btn btn-ghost btn-big" href="#sec-channels" data-i18n="heroHow"></a>
+        </div>
+        <div class="facts"><span data-i18n="heroFact1"></span><span data-i18n="heroFact2"></span><span data-i18n="heroFact3"></span></div>
+      </div>
+      <div class="hero-art-wrap reveal">
+        <svg class="hero-art" viewBox="0 0 480 400" role="img" aria-label="Спутник над полем">
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D6EBFB"/><stop offset="1" stop-color="#F1F8E9"/></linearGradient>
+            <clipPath id="frame"><rect x="0" y="0" width="480" height="400" rx="36"/></clipPath>
+          </defs>
+          <g clip-path="url(#frame)">
+            <rect width="480" height="400" fill="url(#sky)"/>
+            <circle cx="392" cy="78" r="46" fill="#FFD54F" opacity=".28"/>
+            <circle cx="392" cy="78" r="30" fill="#FFD54F"/>
+            <path d="M0 240 L70 170 L120 210 L200 120 L270 200 L330 150 L410 215 L480 180 V400 H0Z" fill="#B7C6CF"/>
+            <path d="M200 120 L222 145 L208 142 L196 152 L184 140Z M330 150 L346 166 L334 164 L322 170Z" fill="#fff"/>
+            <polygon class="beam" points="150,128 40,318 300,318" fill="#F9A825"/>
+            <path d="M0 280 Q120 236 250 270 T480 262 V400 H0Z" fill="#9CCC65"/>
+            <path d="M0 312 Q210 282 480 306 V400 H0Z" fill="#7CB342"/>
+            <g stroke="#558B2F" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7">
+              <path d="M20 340 Q220 316 460 334"/><path d="M10 362 Q220 338 470 356"/><path d="M0 384 Q220 360 480 378"/>
+            </g>
+            <g transform="translate(368 262)">
+              <rect x="0" y="12" width="40" height="28" rx="3" fill="#FFF8E1"/>
+              <path d="M-6 14 L20 -6 L46 14Z" fill="#D84315"/>
+              <rect x="15" y="24" width="10" height="16" fill="#8D6E63"/>
+            </g>
+            <g class="sat">
+              <g transform="translate(150 110) rotate(-18)">
+                <rect x="-62" y="-11" width="40" height="22" rx="3" fill="#1E88E5"/>
+                <rect x="22" y="-11" width="40" height="22" rx="3" fill="#1E88E5"/>
+                <path d="M-48 -11V11M-35 -11V11M36 -11V11M49 -11V11M-62 0H-22M22 0H62" stroke="#90CAF9" stroke-width="1.5"/>
+                <rect x="-22" y="-3" width="44" height="6" fill="#90A4AE"/>
+                <rect x="-16" y="-17" width="32" height="34" rx="7" fill="#ECEFF1" stroke="#78909C" stroke-width="2"/>
+                <circle cx="0" cy="22" r="6" fill="#F9A825"/>
+                <path d="M0 -17 V-28" stroke="#78909C" stroke-width="2"/><circle cx="0" cy="-30" r="3" fill="#78909C"/>
+              </g>
+            </g>
+          </g>
+        </svg>
+        <div class="hero-sms"><small>AgroPulse · SMS</small><span data-i18n="heroSms"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Идея ===== -->
+  <section class="band alt" id="sec-idea">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="ideaKicker"></div>
+        <h2 data-i18n="ideaTitle"></h2>
+        <p data-i18n="ideaHint"></p>
+      </div>
+      <div class="persona reveal"><span aria-hidden="true">👨‍🌾</span><span data-i18n="storyName"></span></div>
+      <div class="story reveal">
+        <article class="card story-card"><div class="story-emoji" aria-hidden="true">📅</div><h3 data-i18n="story1T"></h3><p data-i18n="story1"></p></article>
+        <article class="card story-card bad"><div class="story-emoji" aria-hidden="true">🥶</div><h3 data-i18n="story2T"></h3><p data-i18n="story2"></p></article>
+        <article class="card story-card good"><div class="story-emoji" aria-hidden="true">📱</div><h3 data-i18n="story3T"></h3><p data-i18n="story3"></p></article>
+      </div>
+      <h3 class="sub-title reveal" data-i18n="questionsTitle"></h3>
+      <div class="questions reveal">
+        <div class="card q-card"><div class="q-icon" aria-hidden="true">📍</div><div><h3 data-i18n="q1T"></h3><p data-i18n="q1"></p></div></div>
+        <div class="card q-card"><div class="q-icon" aria-hidden="true">🌱</div><div><h3 data-i18n="q2T"></h3><p data-i18n="q2"></p></div></div>
+        <div class="card q-card"><div class="q-icon" aria-hidden="true">🛡️</div><div><h3 data-i18n="q3T"></h3><p data-i18n="q3"></p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Как фермер получает совет ===== -->
+  <section class="band sky" id="sec-channels">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="chKicker"></div>
+        <h2 data-i18n="chTitle"></h2>
+        <p data-i18n="chHint"></p>
+      </div>
+      <p class="live-note reveal"><span class="live-dot" aria-hidden="true"></span><span id="liveNote"></span></p>
+      <div class="channels reveal">
+        <div class="card channel">
+          <div class="phone"><div class="tg-screen">
+            <div class="tg-top"><span class="tg-ava" aria-hidden="true">🌾</span><div><b>AgroPulse</b><small data-i18n="tgStatus"></small></div></div>
+            <div class="tg-chat" id="tgChat"></div>
+          </div></div>
+          <div>
+            <h3 data-i18n="tgTitle"></h3>
+            <ul><li data-i18n="tg1"></li><li data-i18n="tg2"></li></ul>
+            <span class="free-tag" data-i18n="tg3"></span>
+          </div>
+        </div>
+        <div class="card channel">
+          <div class="dumbphone">
+            <div class="dumb-brand">AGRO·PHONE</div>
+            <div class="lcd"><div class="lcd-head"><span>AgroPulse</span><span>08:00</span></div><div id="smsText"></div></div>
+            <div class="keys" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>*</span><span>0</span><span>#</span></div>
+          </div>
+          <div>
+            <h3 data-i18n="smsTitle"></h3>
+            <ul><li data-i18n="sms1"></li><li data-i18n="sms2"></li></ul>
+            <span class="free-tag" data-i18n="sms3"></span>
+            <div class="sms-count" id="smsCount"></div>
+          </div>
+        </div>
+      </div>
+      <h3 class="sub-title reveal" data-i18n="whenTitle"></h3>
+      <div class="when reveal">
+        <div><b aria-hidden="true">🌱</b><span data-i18n="when1"></span></div>
+        <div><b aria-hidden="true">❄️</b><span data-i18n="when2"></span></div>
+        <div><b aria-hidden="true">🌵</b><span data-i18n="when3"></span></div>
+        <div><b aria-hidden="true">🔍</b><span data-i18n="when5"></span></div>
+        <div><b aria-hidden="true">🔕</b><span data-i18n="when4"></span></div>
+      </div>
+      <div class="card web-note reveal"><div class="q-icon" aria-hidden="true">🧑‍💼</div><div><h3 data-i18n="webTitle"></h3><p class="top-hint" data-i18n="web1"></p></div></div>
+    </div>
+  </section>
+
+  <!-- ===== Попробуйте сами ===== -->
+  <section class="band" id="sec-demo">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="demoKicker"></div>
+        <h2 data-i18n="demoTitle"></h2>
+        <p data-i18n="demoHint"></p>
+      </div>
+      <div class="field-grid reveal">
+        <div class="card ctrl-card">
+          <form id="searchForm" autocomplete="off">
+            <label class="field-label" for="searchInput" data-i18n="searchLabel"></label>
+            <div class="search">
+              <input id="searchInput" type="search" data-i18n-ph="searchPh">
+              <button type="submit" class="btn btn-green" id="searchBtn" data-i18n="searchBtn"></button>
+            </div>
+            <div class="form-msg" id="searchMsg" role="status"></div>
+          </form>
+          <button type="button" class="btn btn-ghost" id="locateBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            <span data-i18n="locate"></span>
+          </button>
+          <div class="ctrl-row">
+            <div>
+              <label class="field-label" for="cropSelect" data-i18n="cropLabel"></label>
+              <div class="select-wrap"><select id="cropSelect"></select></div>
+            </div>
+            <div>
+              <label class="field-label" for="fieldSelect" data-i18n="presetLabel"></label>
+              <div class="select-wrap"><select id="fieldSelect"></select></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card map-card">
+          <div id="map"></div>
+          <div class="map-status map-pill" id="mapStatus" role="status"></div>
+          <div class="map-ui top">
+            <button type="button" class="map-pill layer-toggle" id="satToggle" aria-pressed="false">
+              <span class="switch" aria-hidden="true"></span><span data-i18n="satellite"></span>
+            </button>
+            <button type="button" class="map-pill layer-toggle" id="layerToggle" aria-pressed="true">
+              <span class="switch" aria-hidden="true"></span><span data-i18n="layer"></span>
+            </button>
+          </div>
+          <div class="map-ui bottom"><div class="map-pill map-legend" id="mapLegend"></div></div>
+        </div>
+
+        <div class="card point-card" id="pointCard">
+          <div class="point-head">
+            <div class="point-name" id="pointName"></div>
+            <a class="how-link" href="#nasa-srtm" data-i18n="howTerrain"></a>
+          </div>
+          <div class="suit" id="suitBox"></div>
+          <div class="best">
+            <div class="best-title" data-i18n="bestTitle"></div>
+            <div class="best-list" id="bestCrops"></div>
+          </div>
+          <dl class="field-info" id="fieldInfo"></dl>
+          <div class="top-places">
+            <h3 data-i18n="topTitle"></h3>
+            <p class="top-hint" id="topHint"></p>
+            <ol id="topPlaces"></ol>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="advice-title reveal" data-i18n="adviceTitle"></h3>
+      <div class="summary-grid reveal" id="summaryGrid"></div>
+
+      <div class="detail-grid reveal">
+        <div class="card" id="sowCard">
+          <h3 id="sowTitle"></h3>
+          <div class="sow-summary" id="sowSummary"></div>
+          <details class="more" id="sowDetails">
+            <summary data-i18n="sowWhy"></summary>
+            <p id="sowHint"></p>
+            <div class="chart-box"><canvas id="sowChart" aria-label="График"></canvas></div>
+          </details>
+        </div>
+        <div class="card" id="weekCard">
+          <h3 data-i18n="weekTitle"></h3>
+          <div class="warnings" id="warnings"></div>
+          <div class="forecast-grid" id="forecastGrid"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+      <div class="card zones-card reveal" id="zonesCard">
+        <div>
+          <svg class="zones-svg" id="zonesSvg" viewBox="0 0 100 100" role="img" aria-label="Карта участков поля"></svg>
+          <div class="seg" role="group">
+            <button type="button" data-zview="now" aria-pressed="true" data-i18n="zonesNow"></button>
+            <button type="button" data-zview="change" aria-pressed="false" data-i18n="zonesChange"></button>
+          </div>
+        </div>
+        <div>
+          <h3 data-i18n="zonesTitle"></h3>
+          <p class="zones-hint" data-i18n="zonesHint"></p>
+          <div class="zones-result" id="zonesResult"></div>
+          <div class="zones-legend" id="zonesLegend"></div>
+          <div class="zones-actions">
+            <button type="button" class="btn btn-ghost" id="zonesMapBtn" data-i18n="zonesShowMap"></button>
+            <a class="how-link" href="#nasa-modis" data-i18n="howLink2"></a>
+          </div>
+        </div>
+</div>
+    </div>
+  </section>
+
+  <!-- ===== Откуда берутся советы ===== -->
+  <section class="band alt" id="sec-nasa">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="nasaKicker"></div>
+        <h2 data-i18n="nasaTitle"></h2>
+        <p data-i18n="nasaHint"></p>
+      </div>
+      <div class="pipeline reveal">
+        <div class="card pipe-step"><div class="pipe-icon" aria-hidden="true">🛰️</div><h3 data-i18n="pipe1T"></h3><p data-i18n="pipe1"></p></div>
+        <div class="card pipe-step"><div class="pipe-icon" aria-hidden="true">📡</div><h3 data-i18n="pipe2T"></h3><p data-i18n="pipe2"></p></div>
+        <div class="card pipe-step"><div class="pipe-icon" aria-hidden="true">🧮</div><h3 data-i18n="pipe3T"></h3><p data-i18n="pipe3"></p></div>
+        <div class="card pipe-step"><div class="pipe-icon" aria-hidden="true">💬</div><h3 data-i18n="pipe4T"></h3><p data-i18n="pipe4"></p></div>
+      </div>
+      <div class="card ndvi-demo reveal">
+        <div>
+          <h3 data-i18n="ndviDemoTitle"></h3>
+          <p data-i18n="ndviDemoText"></p>
+          <input type="range" id="ndviSlider" min="0" max="100" value="85" aria-labelledby="ndviSliderLabel">
+          <div class="slider-labels" id="ndviSliderLabel"><span data-i18n="ndviDry"></span><span data-i18n="ndviHealthy"></span></div>
+        </div>
+        <div class="ndvi-viz">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <path id="leafPath" d="M60 8C98 26 104 78 60 112C16 78 22 26 60 8Z" fill="#43A047"/>
+            <path d="M60 18V104M60 46L78 34M60 62L40 48M60 78L80 64M60 92L42 80" stroke="rgba(255,255,255,.55)" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="bars">
+            <div class="bar-row"><span data-i18n="ndviRed"></span><div class="bar"><i id="barRed" style="background:#E53935"></i></div><b id="valRed"></b></div>
+            <div class="bar-row"><span data-i18n="ndviNir"></span><div class="bar"><i id="barNir" style="background:#7B1FA2"></i></div><b id="valNir"></b></div>
+          </div>
+          <div class="formula" id="ndviFormula"></div>
+        </div>
+      </div>
+      <div class="missions-grid reveal" id="missionsGrid"></div>
+      <div class="honest reveal"><h3 data-i18n="honestTitle"></h3><p data-i18n="honestText"></p></div>
+    </div>
+  </section>
+
+  <!-- ===== Сколько это стоит ===== -->
+  <section class="band" id="sec-cost">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="costKicker"></div>
+        <h2 data-i18n="costTitle"></h2>
+        <p data-i18n="costHint"></p>
+      </div>
+      <div class="cost-grid reveal">
+        <div class="card cost-card"><div class="q-icon" aria-hidden="true">👨‍🌾</div><h3 data-i18n="cost1T"></h3><div class="cost-big" data-i18n="cost1V"></div><p data-i18n="cost1"></p></div>
+        <div class="card cost-card"><div class="q-icon" aria-hidden="true">💬</div><h3 data-i18n="cost2T"></h3><div class="cost-big" data-i18n="cost2V"></div><p data-i18n="cost2"></p></div>
+        <div class="card cost-card"><div class="q-icon" aria-hidden="true">📱</div><h3 data-i18n="cost3T"></h3><div class="cost-big small" data-i18n="cost3V"></div><p data-i18n="cost3"></p></div>
+        <div class="card cost-card"><div class="q-icon" aria-hidden="true">🛰️</div><h3 data-i18n="cost4T"></h3><div class="cost-big" data-i18n="cost4V"></div><p data-i18n="cost4"></p></div>
+      </div>
+      <h3 class="sub-title reveal" data-i18n="flowTitle"></h3>
+      <div class="flow reveal">
+        <div class="flow-step"><b aria-hidden="true">🖥️</b><span data-i18n="flow1"></span></div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step"><b aria-hidden="true">📱</b><span data-i18n="flow2"></span></div>
+        <div class="flow-arrow" aria-hidden="true">→</div>
+        <div class="flow-step"><b aria-hidden="true">👨‍🌾</b><span data-i18n="flow3"></span></div>
+      </div>
+      <p class="who-pays reveal" data-i18n="whoPays"></p>
+    </div>
+  </section>
+
+  <!-- ===== Что дальше ===== -->
+  <section class="band alt" id="sec-next">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div class="kicker" data-i18n="nextKicker"></div>
+        <h2 data-i18n="nextTitle"></h2>
+      </div>
+      <div class="roadmap reveal">
+        <div class="card rm-step now"><div class="rm-tag" data-i18n="n1Tag"></div><h3 data-i18n="n1T"></h3><p data-i18n="n1"></p></div>
+        <div class="card rm-step pilot"><div class="rm-tag" data-i18n="n2Tag"></div><h3 data-i18n="n2T"></h3><p data-i18n="n2"></p></div>
+        <div class="card rm-step later"><div class="rm-tag" data-i18n="n3Tag"></div><h3 data-i18n="n3T"></h3><p data-i18n="n3"></p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap" data-i18n="footer"></footer>
+
+<!-- =====================================================================
+     ЛОГИКА ПРИЛОЖЕНИЯ
+     ===================================================================== -->
+<script>
+'use strict';
+
+/* ---------- Переводы интерфейса (RU / KG) ---------- */
+const I18N = {
+  ru: {
+    navIdea: 'Идея', navChannels: 'Как получит фермер', navDemo: 'Попробовать', navNasa: 'Откуда данные', navCost: 'Стоимость', navNext: 'Что дальше',
+    heroBadge: '🛰️ Прототип для хакатона · данные NASA',
+    heroTitle: 'Спутник NASA подскажет фермеру, <em>где и когда сеять</em>',
+    heroText: 'Фермер называет своё село и получает простой совет на кыргызском или русском: что здесь вырастет, когда сеять и когда беречь посевы от заморозка и засухи. В Telegram или обычным SMS — даже без интернета.',
+    heroTry: 'Попробовать на карте', heroHow: 'Как фермер получит совет',
+    heroFact1: '🛰️ 4 источника данных NASA', heroFact2: '💬 Telegram и SMS', heroFact3: '🆓 Бесплатно для фермера',
+    heroSms: '❄️ В четверг ночью заморозок до −2 °C. Отложите посев и укройте всходы.',
+    ideaKicker: 'Зачем это нужно',
+    ideaTitle: 'Погода изменилась, а календарь посева — нет',
+    ideaHint: 'Весна приходит раньше, но поздние заморозки и засуха никуда не делись. Ошибка на неделю может стоить урожая.',
+    storyName: 'Знакомьтесь: Асан, фермер из Кемина (придуманный пример)',
+    story1T: 'Как было', story1: 'Асан сеет, как сеял его отец, — по привычному календарю. Агроном далеко, а интернет в селе работает не всегда.',
+    story2T: 'Что пошло не так', story2: 'Весна пришла раньше, Асан посеял — и через три дня ударил заморозок. Всходы погибли, семена и труд потеряны.',
+    story3T: 'С AgroPulse', story3: 'За день до заморозка на обычный кнопочный телефон приходит SMS: «В четверг заморозок — отложите посев». Асан ждёт два дня и сеет в безопасное окно.',
+    questionsTitle: 'AgroPulse отвечает на три вопроса фермера',
+    q1T: 'Где сажать?', q1: 'Зерно, техническая культура, овощи или сад — карта покажет, где они вырастут, и подскажет, что посадить лучше всего.',
+    q2T: 'Когда сеять?', q2: 'По 40 годам погоды NASA считаем, когда земля прогреется для вашей культуры в этом году.',
+    q3T: 'Когда беречь посевы?', q3: 'Предупреждаем о заморозке, жаре и засухе, подсказываем, нужен ли полив, и показываем, где на поле растения заболели.',
+    chKicker: 'Как фермер получает совет',
+    chTitle: 'Никаких приложений — только Telegram или SMS',
+    chHint: 'Фермеру не нужно разбираться в картах и спутниках. Он получает короткое сообщение на своём языке — только тогда, когда это важно.',
+    liveNote: 'Сообщения ниже собраны для места «{place}» из демо. Поменяйте место или культуру на карте — и они изменятся.',
+    tgStatus: 'бот',
+    tgTitle: 'Telegram — если есть интернет',
+    tg1: 'Фермер находит бота AgroPulse и отправляет геолокацию или название села.',
+    tg2: 'Бот присылает совет с кнопками: сменить место, культуру, включить предупреждения.',
+    tg3: 'Бесплатно — и для нас, и для фермера',
+    smsTitle: 'SMS — если интернета нет',
+    sms1: 'Подходит любой кнопочный телефон.',
+    sms2: 'Подключает агроном айыл окмоту или кооператив — фермеру ничего настраивать не нужно. Или фермер сам отправляет SMS с названием села.',
+    sms3: 'Входящие SMS для фермера бесплатны',
+    smsCount: 'Длина: {c} {chars} · {n} SMS',
+    chars: n => pluralRu(n, 'символ', 'символа', 'символов'),
+    whenTitle: 'Когда приходят сообщения',
+    when1: 'Перед началом сева — «пора сеять»',
+    when2: 'За 1–2 дня до заморозка',
+    when3: 'Когда почва пересыхает, а дождя не будет',
+    when4: 'В остальные дни — тишина, без спама',
+    webTitle: 'А этот сайт — для агронома и кооператива',
+    web1: 'Карта района, сроки сева и риски для всех полей сразу. Агроном видит больше и помогает тем, у кого нет телефона.',
+    tgYou: 'Моё место',
+    tgSuit: 'Место: {label} ({pct} %)',
+    tgSow: 'Сеять: {from} — {to}',
+    tgSowCold: 'Сеять: слишком холодно для этой культуры',
+    tgWater: 'Полив: {label}',
+    tgSat: 'Посевы на снимке спутника: {label}',
+    tgBtn1: '📍 Другое место', tgBtn2: '🌱 Другая культура', tgBtn3: '🔔 Предупреждения: включены',
+    w_soilOk: 'не нужен', w_soilWaitRain: 'подождите, будет дождь', w_soilWater: 'нужен в ближайшие 1–2 дня', w_soilWait: 'через 2–3 дня, если не будет дождя',
+    smsTpl: 'AgroPulse {place}: {crop} — {suit}. {sow}. {risk}. Полив: {water}.',
+    smsSuitGood: 'место подходит', smsSuitMid: 'можно, с условиями', smsSuitBad: 'место не подходит',
+    smsSow: 'Сев {from}-{to}', smsSowCold: 'Для сева холодно',
+    smsFrost: '{day} заморозок {t}°C, укройте всходы', smsHeat: '{day} жара +{t}°C', smsDrought: 'засуха, нужен полив', smsOk: 'опасной погоды нет',
+    demoKicker: 'Попробуйте сами',
+    demoTitle: 'Выберите место — получите совет',
+    demoHint: 'Найдите село, нажмите «Где я» или кликните по карте. Цвет показывает, где выбранная культура вырастет хорошо.',
+    searchLabel: 'Найти село',
+    searchPh: 'Например, «Ивановка»',
+    searchBtn: 'Найти', searching: 'Ищем…',
+    notFound: 'Не нашли такое место. Попробуйте другое название.',
+    searchError: 'Поиск недоступен — нет интернета. Выберите место на карте.',
+    locate: 'Где я', locating: 'Определяем…',
+    locateError: 'Не удалось определить местоположение. Разрешите доступ к геопозиции или выберите место на карте.',
+    cropLabel: 'Культура', presetLabel: 'Участок', presetGroup: 'Демо-поля',
+    customOption: '📍 Точка на карте',
+    customName: 'Точка на карте',
+    area: 'Площадь', areaUnit: 'га', coords: 'Координаты', elevation: 'Высота', elevUnit: 'м', slope: 'Уклон',
+    customArea: 'участок 500 × 500 м',
+    suitTitle: 'Пригодность для «{crop}»',
+    suitGood: 'Подходит', suitMid: 'Можно, с условиями', suitBad: 'Не подходит',
+    reasonOk: 'Тепла и влаги хватает, рельеф ровный.',
+    reasonCold: 'Прохладно для культуры: высота {elev} м, средняя температура года {t} °C.',
+    reasonColdBad: 'Слишком холодно для культуры: высота {elev} м, средняя температура года {t} °C.',
+    reasonHot: 'Тепловато: культура любит прохладу, урожай будет ниже.',
+    reasonHotBad: 'Слишком жарко: культура плохо растёт в такой жаре.',
+    reasonSteep: 'Склон {slope}°: технике тяжело работать, дожди смывают почву.',
+    reasonSteepBad: 'Слишком крутой склон {slope}°: под пашню не годится.',
+    reasonDry: 'Своей влаги мало ({m} %) — нужен полив.',
+    topTitle: 'Лучшие места на карте сейчас',
+    topHint: 'Для культуры «{crop}» в видимой области. Нажмите, чтобы разобрать место.',
+    topEmpty: 'В этой области подходящих мест нет. Сдвиньте или отдалите карту.',
+    topZoom: 'Приблизьте карту, чтобы найти места.',
+    topItem: '{dist} км {dir} от центра карты · {elev} м',
+    topHere: 'в центре карты · {elev} м',
+    dirs: ['к северу', 'к северо-востоку', 'к востоку', 'к юго-востоку', 'к югу', 'к юго-западу', 'к западу', 'к северо-западу'],
+    layer: 'Где сажать', satellite: 'Спутник',
+    statusLoading: 'Считаем рельеф и климат…',
+    statusZoom: 'Приблизьте карту — слой виден с масштаба 8',
+    statusOffline: 'Рельеф не загрузился — показываем по упрощённой модели',
+    howTerrain: 'Откуда эти данные?',
+    adviceTitle: 'Совет для этого места',
+    sumSuit: 'Место для «{crop}»', sumWater: 'Полив', sumSow: 'Когда сеять', sumRisk: 'Риски недели',
+    sumWaterSub: 'влажность почвы {pct} % · по спутнику SMAP',
+    sumSowSub: 'когда земля прогреется до +{temp} °C',
+    sumTooCold: 'Слишком холодно',
+    sumTooColdSub: 'лето слишком короткое',
+    sumNoRisk: 'Без опасных явлений', sumNoRiskSub: 'хорошие дни для полевых работ',
+    sumMore: 'ещё {n}',
+    dryDays: '{n} {days} без дождя',
+    ndviPoor: 'Плохо', ndviMid: 'Средне', ndviGood: 'Хорошо',
+    tgNdviPoor: 'растения угнетены, осмотрите поле', tgNdviMid: 'растут, но не в полную силу', tgNdviGood: 'растения здоровые',
+    sowTitle: '🌱 Когда сеять',
+    sowWhy: 'Почему эти даты? Показать 40 лет наблюдений',
+    sowHint: 'Каждая точка — день, когда в том году среднесуточная температура устойчиво поднялась выше +{temp} °C (NASA POWER, 1985–2025). Порог зависит от культуры.',
+    chartSeries: 'Переход через +{temp} °C', chartTrend: 'Тренд',
+    sowEarlier: 'Сезон начинается на <b>{n} {days}</b> раньше, чем 40 лет назад.',
+    sowLater: 'Сезон начинается на <b>{n} {days}</b> позже, чем 40 лет назад.',
+    sowSame: 'За 40 лет начало сезона почти не изменилось.',
+    sowWindow: 'Сеять «{crop}»: <b>{from} — {to}</b>',
+    sowNote: 'Окно посчитано по тренду на {year} год: дата перехода через +{temp} °C плюс {warm} дней на прогрев почвы, длительность — {len} {lenDays}.',
+    sowTooCold: 'Для культуры «{crop}» здесь слишком холодно: устойчивое тепло выше <b>+{temp} °C</b> приходит поздно или не каждый год, и лето слишком короткое, чтобы урожай успел созреть. Выберите место ниже или другую культуру.',
+    weekTitle: '🌦️ Погода и риски на неделю',
+    today: 'Сегодня',
+    riskFrost: 'Заморозок', riskHeat: 'Жара', riskDrought: 'Засуха', riskNone: 'Без риска',
+    mm: 'мм',
+    warnFrost: 'Возможен ночной заморозок {day} (до {t} °C). Отложите посев и укройте всходы.',
+    warnHeat: 'Жара до {t} °C {day}. Поливайте рано утром или вечером.',
+    warnDrought: '{n} дней подряд без осадков при сухой почве — риск засухи. Запланируйте полив.',
+    warnNone: 'Опасных явлений не ожидается. Хорошие дни для полевых работ.',
+    nasaKicker: 'Откуда берутся советы',
+    nasaTitle: 'Спутники видят то, что не видно с земли',
+    nasaHint: 'Влагу в почве, здоровье листьев, рельеф и погоду за 40 лет. AgroPulse собирает это вместе и переводит на простой язык.',
+    pipe1T: 'Спутник пролетает', pipe1: 'На высоте около 700 км — над вашим полем каждые 1–3 дня, в любую погоду.',
+    pipe2T: 'Измеряет невидимое', pipe2: 'Инфракрасный свет от листьев, микроволны от влажной почвы, высоту рельефа.',
+    pipe3T: 'AgroPulse считает', pipe3: 'Переводит измерения в понятные выводы: место подходит, земля прогрета, почва сухая.',
+    pipe4T: 'Фермер получает SMS', pipe4: '«Сеять с 3 апреля», «в четверг заморозок», «полив не нужен».',
+    ndviDemoTitle: 'Как спутник видит здоровье растения',
+    ndviDemoText: 'Живой лист поглощает красный свет и сильно отражает невидимый глазу инфракрасный — а камера спутника его видит. Сухое растение отражает оба цвета почти одинаково. Подвиньте ползунок:',
+    ndviDry: 'Сухое', ndviHealthy: 'Здоровое',
+    ndviRed: 'Красный свет (отражено)', ndviNir: 'Инфракрасный свет (отражено)',
+    missionHow: 'Как измеряет', missionGives: 'Что даёт фермеру', missionUsed: 'Где в AgroPulse',
+    honestTitle: 'Честно: что в прототипе настоящее',
+    honestText: 'Настоящие: карта, поиск сёл и рельеф — высоты из открытых тайлов AWS Terrain Tiles, собранных в основном из NASA SRTM. Значения SMAP, MODIS и NASA POWER пока подготовлены заранее в формате NASA API, прогноз — тоже демо. Telegram и SMS на этой странице — макеты с настоящими текстами; бот и SMS-шлюз запускаем на пилоте. Города и водоёмы пока не исключаются из слоя «Где сажать».',
+    costKicker: 'Сколько это стоит',
+    costTitle: 'Для фермера — бесплатно',
+    costHint: 'Мы специально выбрали самые дешёвые каналы, чтобы сервис работал без денег фермера.',
+    cost1T: 'Фермеру', cost1V: '0 сом', cost1: 'Входящие SMS и Telegram бесплатны. Не нужен ни смартфон, ни мобильный интернет.',
+    cost2T: 'Telegram-бот', cost2V: '0 сом', cost2: 'Telegram Bot API бесплатный, сколько бы сообщений ни было.',
+    cost3T: 'SMS', cost3V: 'один пакет SMS', cost3: 'Свой SMS-шлюз: обычный Android-телефон с SIM-картой и бесплатной программой-шлюзом. Платим за месячный пакет SMS у оператора, а не за каждое сообщение.',
+    cost4T: 'Данные NASA', cost4V: '0 сом', cost4: 'Все данные NASA открытые и бесплатные. Нужен только небольшой сервер.',
+    flowTitle: 'Как отправить SMS без дорогих сервисов',
+    flow1: 'Сервер AgroPulse считает совет для каждого фермера',
+    flow2: 'Передаёт текст на Android-телефон с SIM-картой',
+    flow3: 'Телефон рассылает SMS фермерам, как обычные сообщения',
+    whoPays: '💡 Кто оплатит пакет SMS, когда фермеров станет много: кооперативы и агроконсультационные службы, социальные программы операторов связи, программы поддержки фермеров. На пилоте — сама команда.',
+    nextKicker: 'Что дальше',
+    nextTitle: 'От прототипа до полей',
+    n1Tag: 'Сейчас', n1T: 'Работающий прототип', n1: 'Карта «где сажать», расчёт сроков сева и рисков, готовые тексты для Telegram и SMS.',
+    n2Tag: 'Весна 2027', n2T: 'Пилот в Чуйской области', n2: 'Telegram-бот и SMS-шлюз для 20–30 фермеров. Сравниваем наши советы с тем, что было на поле.',
+    n3Tag: 'Дальше', n3T: 'Вся страна', n3: 'Больше культур, ежедневные данные SMAP и MODIS, голосовые сообщения для тех, кому трудно читать.',
+    footer: 'AgroPulse — прототип для хакатона. Данные спутников в демо подготовлены в формате NASA POWER API.',
+    mapFallback: 'Карта не загрузилась — проверьте подключение к интернету.',
+    chartFallback: 'График не загрузился — проверьте подключение к интернету.',
+    weekShort: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+    // Форма «в какой день» для текста предупреждений
+    weekIn: ['в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье'],
+    when5: 'Когда спутник заметил, что растения на части поля ослабли',
+    cropGroups: { grain: 'Зерновые', industrial: 'Технические — для переработки', veg: 'Овощи и бобовые', garden: 'Сады и ягоды' },
+    bestTitle: 'Что здесь вырастет лучше всего (нажмите, чтобы выбрать)',
+    tgBest: 'Ещё подойдут: {list}',
+    sowTitleSeed: '🌱 Когда сеять', sowTitlePlant: '🌳 Когда сажать саженцы',
+    sowWindowPlant: 'Сажать саженцы «{crop}»: <b>{from} — {to}</b>',
+    sumPlant: 'Когда сажать', smsPlant: 'Посадка {from}-{to}', tgPlant: 'Сажать саженцы: {from} — {to}',
+    zonesTitle: '🔍 Где на поле больные растения',
+    zonesHint: 'Спутник Landsat снимает поле участками по 30 м. Сравниваем со снимком 16 дней назад и ищем места, где растения стали слабее остальных.',
+    zonesNow: 'Сейчас', zonesChange: 'Что изменилось за 16 дней',
+    zonesFound: 'Растения ослабли на <b>{pct} % поля</b> (≈ {ha} га) — {where}.',
+    zonesNone: 'Больных участков не видно: растения по всему полю развиваются ровно.',
+    zoneCauseDry: 'Похоже на засуху: почва сухая ({soil} %). Полейте этот участок в первую очередь.',
+    zoneCausePest: 'Почва влажная — значит, дело не в воде. Возможны болезнь или вредители: осмотрите участок в ближайшие дни.',
+    zoneCauseSlope: 'Участок на склоне: вода быстро стекает, почву могло смыть. Осмотрите и при необходимости подсейте.',
+    zonesShowMap: '🗺️ Показать на карте',
+    howLink2: 'Как спутник это видит →',
+    zonesWeak: 'слабые', zonesStrong: 'здоровые', zonesDamaged: 'ослабли за 16 дней',
+    zonesWorse: 'стало хуже', zonesSame: 'без изменений', zonesBetter: 'стало лучше',
+    zonesCenter: 'в центре поля',
+    zonesParts: ['в северной части', 'в северо-восточной части', 'в восточной части', 'в юго-восточной части', 'в южной части', 'в юго-западной части', 'в западной части', 'в северо-западной части'],
+    tgZones: 'Растения ослабли на {pct} % поля ({where}) — осмотрите',
+    smsZones: 'Ослабло {pct}% поля, осмотрите',
+    days: n => pluralRu(n, 'день', 'дня', 'дней')
+  },
+  ky: {
+    navIdea: 'Идея', navChannels: 'Дыйканга кантип жетет', navDemo: 'Байкап көрүү', navNasa: 'Маалымат кайдан', navCost: 'Баасы', navNext: 'Андан ары',
+    heroBadge: '🛰️ Хакатон үчүн прототип · NASA маалыматтары',
+    heroTitle: 'NASA спутниги дыйканга <em>кайда жана качан себүүнү</em> айтып берет',
+    heroText: 'Дыйкан айылынын атын айтат жана кыргыз же орус тилинде жөнөкөй кеңеш алат: бул жерде эмне өсөт, качан себүү керек жана эгинди үшүктөн, кургакчылыктан качан сактоо керек. Telegram аркылуу же жөнөкөй SMS менен — интернет жок болсо да.',
+    heroTry: 'Картадан байкап көрүү', heroHow: 'Дыйкан кеңешти кантип алат',
+    heroFact1: '🛰️ NASAнын 4 маалымат булагы', heroFact2: '💬 Telegram жана SMS', heroFact3: '🆓 Дыйкан үчүн акысыз',
+    heroSms: '❄️ Бейшемби түнү −2 °C чейин үшүк. Себүүнү кийинкиге калтырып, өнүмдөрдү жабыңыз.',
+    ideaKicker: 'Бул эмне үчүн керек',
+    ideaTitle: 'Аба ырайы өзгөрдү, а себүү календары — жок',
+    ideaHint: 'Жаз эрте келет, бирок кеч үшүк жана кургакчылык жоголгон жок. Бир жумалык ката түшүмгө турушу мүмкүн.',
+    storyName: 'Таанышыңыз: Асан, Кеминдик дыйкан (ойдон чыгарылган мисал)',
+    story1T: 'Мурун кандай болчу', story1: 'Асан атасы сепкендей — адаттагы календарь боюнча себет. Агроном алыста, айылда интернет дайыма эле иштебейт.',
+    story2T: 'Эмне туура эмес болду', story2: 'Жаз эрте келди, Асан септи — үч күндөн кийин үшүк урду. Өнүмдөр үшүп, үрөн менен эмгек текке кетти.',
+    story3T: 'AgroPulse менен', story3: 'Үшүктөн бир күн мурун жөнөкөй баскычтуу телефонго SMS келет: «Бейшембиде үшүк — себүүнү кийинкиге калтырыңыз». Асан эки күн күтүп, коопсуз мезгилде себет.',
+    questionsTitle: 'AgroPulse дыйкандын үч суроосуна жооп берет',
+    q1T: 'Кайда себүү керек?', q1: 'Дан, техникалык өсүмдүк, жашылча же бак — карта алар кайда өсөрүн көрсөтүп, эмнени отургузган жакшы экенин айтат.',
+    q2T: 'Качан себүү керек?', q2: 'NASAнын 40 жылдык аба ырайы боюнча быйыл жер өсүмдүгүңүз үчүн качан жылыарын эсептейбиз.',
+    q3T: 'Эгинди качан сактоо керек?', q3: 'Үшүк, ысык жана кургакчылык жөнүндө эскертебиз, сугаруу керекпи айтабыз жана талаанын кайсы жеринде өсүмдүктөр ооруганын көрсөтөбүз.',
+    chKicker: 'Дыйкан кеңешти кантип алат',
+    chTitle: 'Эч кандай тиркеме жок — Telegram же SMS гана',
+    chHint: 'Дыйканга карталарды жана спутниктерди түшүнүүнүн кереги жок. Ал өз тилинде кыска билдирүү алат — маанилүү болгондо гана.',
+    liveNote: 'Төмөнкү билдирүүлөр демодогу «{place}» жери үчүн түзүлгөн. Картадан жерди же өсүмдүктү алмаштырыңыз — алар да өзгөрөт.',
+    tgStatus: 'бот',
+    tgTitle: 'Telegram — интернет болсо',
+    tg1: 'Дыйкан AgroPulse ботун таап, геолокациясын же айылдын атын жөнөтөт.',
+    tg2: 'Бот баскычтары бар кеңеш жиберет: жерди, өсүмдүктү алмаштыруу, эскертүүлөрдү күйгүзүү.',
+    tg3: 'Акысыз — бизге да, дыйканга да',
+    smsTitle: 'SMS — интернет жок болсо',
+    sms1: 'Каалаган баскычтуу телефон жарайт.',
+    sms2: 'Айыл өкмөтүнүн агроному же кооператив туташтырат — дыйкан эч нерсе жөндөбөйт. Же дыйкан өзү айылдын атын SMS менен жөнөтөт.',
+    sms3: 'Келген SMS дыйкан үчүн акысыз',
+    smsCount: 'Узундугу: {c} {chars} · {n} SMS',
+    chars: () => 'белги',
+    whenTitle: 'Билдирүүлөр качан келет',
+    when1: 'Себүү башталаар алдында — «себүүгө убакыт болду»',
+    when2: 'Үшүктөн 1–2 күн мурун',
+    when3: 'Топурак кургап, жаан күтүлбөсө',
+    when4: 'Калган күндөрү — тынчтык, спам жок',
+    webTitle: 'Ал эми бул сайт — агроном жана кооператив үчүн',
+    web1: 'Райондун картасы, себүү мөөнөттөрү жана бардык талаалардын коркунучтары бир жерде. Агроном көбүрөөк көрөт жана телефону жоктарга жардам берет.',
+    tgYou: 'Менин жерим',
+    tgSuit: 'Жер: {label} ({pct} %)',
+    tgSow: 'Себүү: {from} — {to}',
+    tgSowCold: 'Себүү: бул өсүмдүк үчүн өтө суук',
+    tgWater: 'Сугаруу: {label}',
+    tgSat: 'Спутник сүрөтүндөгү эгин: {label}',
+    tgBtn1: '📍 Башка жер', tgBtn2: '🌱 Башка өсүмдүк', tgBtn3: '🔔 Эскертүүлөр: күйүк',
+    w_soilOk: 'кереги жок', w_soilWaitRain: 'күтө туруңуз, жаан болот', w_soilWater: 'жакынкы 1–2 күндө керек', w_soilWait: 'жаан болбосо, 2–3 күндөн кийин',
+    smsTpl: 'AgroPulse {place}: {crop} — {suit}. {sow}. {risk}. Сугаруу: {water}.',
+    smsSuitGood: 'жер ылайыктуу', smsSuitMid: 'шарттар менен болот', smsSuitBad: 'жер ылайыксыз',
+    smsSow: 'Себүү {from}-{to}', smsSowCold: 'Себүүгө суук',
+    smsFrost: '{day} үшүк {t}°C, өнүмдөрдү жабыңыз', smsHeat: '{day} ысык +{t}°C', smsDrought: 'кургакчылык, сугаруу керек', smsOk: 'коркунучтуу аба ырайы жок',
+    demoKicker: 'Өзүңүз байкап көрүңүз',
+    demoTitle: 'Жерди тандаңыз — кеңеш алыңыз',
+    demoHint: 'Айылды табыңыз, «Мен кайдамын» баскычын басыңыз же картаны басыңыз. Түс тандалган өсүмдүк кайсы жерде жакшы өсөрүн көрсөтөт.',
+    searchLabel: 'Айылды табуу',
+    searchPh: 'Мисалы, «Ивановка»',
+    searchBtn: 'Табуу', searching: 'Издөөдө…',
+    notFound: 'Мындай жер табылган жок. Башка аталышты жазып көрүңүз.',
+    searchError: 'Издөө иштебей жатат — интернет жок. Жерди картадан тандаңыз.',
+    locate: 'Мен кайдамын', locating: 'Аныкталууда…',
+    locateError: 'Жайгашкан жерди аныктоо мүмкүн болгон жок. Геопозицияга уруксат бериңиз же жерди картадан тандаңыз.',
+    cropLabel: 'Өсүмдүк', presetLabel: 'Жер тилкеси', presetGroup: 'Демо-талаалар',
+    customOption: '📍 Картадагы чекит',
+    customName: 'Картадагы чекит',
+    area: 'Аянты', areaUnit: 'га', coords: 'Координаттар', elevation: 'Бийиктиги', elevUnit: 'м', slope: 'Эңкейиш',
+    customArea: '500 × 500 м тилке',
+    suitTitle: '«{crop}» үчүн ылайыктуулугу',
+    suitGood: 'Ылайыктуу', suitMid: 'Шарттар менен болот', suitBad: 'Ылайыксыз',
+    reasonOk: 'Жылуулук жана нымдуулук жетиштүү, жер түз.',
+    reasonCold: 'Бул өсүмдүк үчүн салкыныраак: бийиктиги {elev} м, жылдык орточо температура {t} °C.',
+    reasonColdBad: 'Бул өсүмдүк үчүн өтө суук: бийиктиги {elev} м, жылдык орточо температура {t} °C.',
+    reasonHot: 'Жылуураак: бул өсүмдүк салкынды жакшы көрөт, түшүм азыраак болот.',
+    reasonHotBad: 'Өтө ысык: бул өсүмдүк мындай ысыкта начар өсөт.',
+    reasonSteep: 'Эңкейиш {slope}°: техника менен иштөө оор, жаан топуракты жууп кетет.',
+    reasonSteepBad: 'Өтө тик эңкейиш {slope}°: айдоо үчүн ылайыксыз.',
+    reasonDry: 'Табигый нымдуулук аз ({m} %) — сугаруу керек.',
+    topTitle: 'Картадагы эң жакшы жерлер',
+    topHint: 'Көрүнгөн аймакта «{crop}» үчүн. Талдоо үчүн басыңыз.',
+    topEmpty: 'Бул аймакта ылайыктуу жер жок. Картаны жылдырыңыз же кичирейтиңиз.',
+    topZoom: 'Жер табуу үчүн картаны чоңойтуңуз.',
+    topItem: 'картанын борборунан {dir} {dist} км · {elev} м',
+    topHere: 'картанын борборунда · {elev} м',
+    dirs: ['түндүккө', 'түндүк-чыгышка', 'чыгышка', 'түштүк-чыгышка', 'түштүккө', 'түштүк-батышка', 'батышка', 'түндүк-батышка'],
+    layer: 'Кайда себүү', satellite: 'Спутник',
+    statusLoading: 'Рельеф жана климат эсептелүүдө…',
+    statusZoom: 'Картаны чоңойтуңуз — катмар 8-масштабдан көрүнөт',
+    statusOffline: 'Рельеф жүктөлгөн жок — жөнөкөйлөтүлгөн модель боюнча көрсөтөбүз',
+    howTerrain: 'Маалымат кайдан алынат?',
+    adviceTitle: 'Бул жер үчүн кеңеш',
+    sumSuit: '«{crop}» үчүн жер', sumWater: 'Сугаруу', sumSow: 'Качан себүү', sumRisk: 'Жуманын коркунучтары',
+    sumWaterSub: 'топурактын нымдуулугу {pct} % · SMAP спутниги боюнча',
+    sumSowSub: 'жер +{temp} °C чейин жылыганда',
+    sumTooCold: 'Өтө суук',
+    sumTooColdSub: 'жай өтө кыска',
+    sumNoRisk: 'Коркунуч жок', sumNoRiskSub: 'талаа иштери үчүн ыңгайлуу күндөр',
+    sumMore: 'дагы {n}',
+    dryDays: '{n} {days} жаансыз',
+    ndviPoor: 'Начар', ndviMid: 'Орточо', ndviGood: 'Жакшы',
+    tgNdviPoor: 'өсүмдүктөр начар, талааны карап чыгыңыз', tgNdviMid: 'өсүүдө, бирок толук күчүндө эмес', tgNdviGood: 'өсүмдүктөр соо',
+    sowTitle: '🌱 Качан себүү керек',
+    sowWhy: 'Эмне үчүн ушул даталар? 40 жылдык байкоолорду көрсөтүү',
+    sowHint: 'Ар бир чекит — ошол жылы орточо суткалык температура +{temp} °C жогору туруктуу көтөрүлгөн күн (NASA POWER, 1985–2025). Босого өсүмдүккө жараша.',
+    chartSeries: '+{temp} °C аркылуу өтүү', chartTrend: 'Тренд',
+    sowEarlier: 'Сезон 40 жыл мурункуга караганда <b>{n} {days}</b> эрте башталат.',
+    sowLater: 'Сезон 40 жыл мурункуга караганда <b>{n} {days}</b> кеч башталат.',
+    sowSame: 'Акыркы 40 жылда сезондун башталышы дээрлик өзгөргөн жок.',
+    sowWindow: '«{crop}» себүү: <b>{from} — {to}</b>',
+    sowNote: 'Мөөнөт {year}-жылга карата тренд боюнча эсептелди: +{temp} °C өтүү датасына топурак жылышы үчүн {warm} күн кошулду, узактыгы — {len} {lenDays}.',
+    sowTooCold: '«{crop}» үчүн бул жер өтө суук: <b>+{temp} °C</b> жогору туруктуу жылуулук кеч келет же ар жылы эмес, жай түшүм бышканга жетпегендей кыска. Төмөнүрөөк жерди же башка өсүмдүктү тандаңыз.',
+    weekTitle: '🌦️ Жуманын аба ырайы жана коркунучтары',
+    today: 'Бүгүн',
+    riskFrost: 'Үшүк', riskHeat: 'Ысык', riskDrought: 'Кургакчылык', riskNone: 'Коркунуч жок',
+    mm: 'мм',
+    warnFrost: '{day} түнкү үшүк болушу мүмкүн ({t} °C чейин). Себүүнү кийинкиге калтырып, өнүмдөрдү жабыңыз.',
+    warnHeat: '{day} {t} °C чейин ысык болот. Эртең менен эрте же кечинде сугарыңыз.',
+    warnDrought: '{n} күн катары менен жаан жок жана топурак кургак — кургакчылык коркунучу. Сугарууну пландаңыз.',
+    warnNone: 'Коркунучтуу кубулуштар күтүлбөйт. Талаа иштери үчүн ыңгайлуу күндөр.',
+    nasaKicker: 'Кеңештер кайдан алынат',
+    nasaTitle: 'Спутниктер жерден көрүнбөгөндү көрөт',
+    nasaHint: 'Топурактагы нымдуулукту, жалбырактардын ден соолугун, рельефти жана 40 жылдык аба ырайын. AgroPulse муну бириктирип, жөнөкөй тилге которот.',
+    pipe1T: 'Спутник учуп өтөт', pipe1: 'Болжол менен 700 км бийиктикте — талааңыздын үстүнөн ар 1–3 күндө, каалаган аба ырайында.',
+    pipe2T: 'Көзгө көрүнбөгөндү өлчөйт', pipe2: 'Жалбырактардан чагылган инфракызыл жарыкты, нымдуу топурактын микротолкундарын, рельефтин бийиктигин.',
+    pipe3T: 'AgroPulse эсептейт', pipe3: 'Өлчөөлөрдү түшүнүктүү жыйынтыкка айлантат: жер ылайыктуу, топурак жылыды, топурак кургак.',
+    pipe4T: 'Дыйкан SMS алат', pipe4: '«3-апрелден баштап себиңиз», «бейшембиде үшүк», «сугаруунун кереги жок».',
+    ndviDemoTitle: 'Спутник өсүмдүктүн ден соолугун кантип көрөт',
+    ndviDemoText: 'Тирүү жалбырак кызыл жарыкты сиңирет жана көзгө көрүнбөгөн инфракызыл жарыкты көп чагылтат — спутниктин камерасы аны көрөт. Кургак өсүмдүк эки түстү тең дээрлик бирдей чагылтат. Сыдырманы жылдырыңыз:',
+    ndviDry: 'Кургак', ndviHealthy: 'Соо',
+    ndviRed: 'Кызыл жарык (чагылган)', ndviNir: 'Инфракызыл жарык (чагылган)',
+    missionHow: 'Кантип өлчөйт', missionGives: 'Дыйканга эмне берет', missionUsed: 'AgroPulse’та кайда',
+    honestTitle: 'Чынын айтсак: прототипте эмне чыныгы',
+    honestText: 'Чыныгы: карта, айылдарды издөө жана рельеф — бийиктиктер негизинен NASA SRTM маалыматынан түзүлгөн AWS Terrain Tiles ачык тайлдарынан алынат. SMAP, MODIS жана NASA POWER маанилери азырынча NASA API форматында алдын ала даярдалган, болжол да — демо. Бул беттеги Telegram жана SMS — чыныгы тексттери бар макеттер; бот жана SMS-шлюз пилотто ишке киргизилет. Шаарлар жана суу сактагычтар «Кайда себүү» катмарынан азырынча чыгарылбайт.',
+    costKicker: 'Бул канча турат',
+    costTitle: 'Дыйкан үчүн — акысыз',
+    costHint: 'Кызмат дыйкандын акчасысыз иштеши үчүн эң арзан каналдарды атайын тандадык.',
+    cost1T: 'Дыйканга', cost1V: '0 сом', cost1: 'Келген SMS жана Telegram акысыз. Смартфон да, мобилдик интернет да керек эмес.',
+    cost2T: 'Telegram-бот', cost2V: '0 сом', cost2: 'Telegram Bot API акысыз, билдирүүлөр канча болсо да.',
+    cost3T: 'SMS', cost3V: 'бир SMS пакети', cost3: 'Өзүбүздүн SMS-шлюз: SIM-картасы жана акысыз шлюз-программасы бар кадимки Android-телефон. Ар бир билдирүү үчүн эмес, оператордогу айлык SMS пакети үчүн төлөйбүз.',
+    cost4T: 'NASA маалыматтары', cost4V: '0 сом', cost4: 'NASAнын бардык маалыматтары ачык жана акысыз. Чакан сервер гана керек.',
+    flowTitle: 'Кымбат кызматтарсыз SMS кантип жөнөтүлөт',
+    flow1: 'AgroPulse сервери ар бир дыйкан үчүн кеңеш эсептейт',
+    flow2: 'Текстти SIM-картасы бар Android-телефонго берет',
+    flow3: 'Телефон дыйкандарга кадимки билдирүүдөй SMS таратат',
+    whoPays: '💡 Дыйкандар көбөйгөндө SMS пакетин ким төлөйт: кооперативдер жана агрокеңеш кызматтары, байланыш операторлорунун социалдык программалары, дыйкандарды колдоо программалары. Пилотто — команданын өзү.',
+    nextKicker: 'Андан ары эмне',
+    nextTitle: 'Прототиптен талаага чейин',
+    n1Tag: 'Азыр', n1T: 'Иштеген прототип', n1: '«Кайда себүү» картасы, себүү мөөнөттөрүн жана коркунучтарды эсептөө, Telegram жана SMS үчүн даяр тексттер.',
+    n2Tag: '2027-жылдын жазы', n2T: 'Чүй облусунда пилот', n2: '20–30 дыйкан үчүн Telegram-бот жана SMS-шлюз. Кеңештерибизди талаада болгон нерсе менен салыштырабыз.',
+    n3Tag: 'Андан ары', n3T: 'Бүт өлкө', n3: 'Көбүрөөк өсүмдүктөр, күнүмдүк SMAP жана MODIS маалыматтары, окуганы кыйын болгондор үчүн үн билдирүүлөрү.',
+    footer: 'AgroPulse — хакатон үчүн прототип. Демодогу спутник маалыматтары NASA POWER API форматында даярдалган.',
+    mapFallback: 'Карта жүктөлгөн жок — интернет байланышын текшериңиз.',
+    chartFallback: 'График жүктөлгөн жок — интернет байланышын текшериңиз.',
+    weekShort: ['Дш', 'Шш', 'Шр', 'Бш', 'Жм', 'Иш', 'Жк'],
+    weekIn: ['дүйшөмбү күнү', 'шейшемби күнү', 'шаршемби күнү', 'бейшемби күнү', 'жума күнү', 'ишемби күнү', 'жекшемби күнү'],
+    when5: 'Спутник талаанын бир бөлүгүндө өсүмдүктөр алсыраганын байкаганда',
+    cropGroups: { grain: 'Дан эгиндери', industrial: 'Техникалык — кайра иштетүү үчүн', veg: 'Жашылча жана буурчак', garden: 'Бактар жана мөмөлөр' },
+    bestTitle: 'Бул жерде эмне эң жакшы өсөт (тандоо үчүн басыңыз)',
+    tgBest: 'Дагы ылайыктуу: {list}',
+    sowTitleSeed: '🌱 Качан себүү керек', sowTitlePlant: '🌳 Көчөттөрдү качан отургузуу керек',
+    sowWindowPlant: '«{crop}» көчөттөрүн отургузуу: <b>{from} — {to}</b>',
+    sumPlant: 'Качан отургузуу', smsPlant: 'Отургузуу {from}-{to}', tgPlant: 'Көчөт отургузуу: {from} — {to}',
+    zonesTitle: '🔍 Талаанын кайсы жеринде өсүмдүктөр ооруп жатат',
+    zonesHint: 'Landsat спутниги талааны 30 м бөлүктөр менен тартат. 16 күн мурунку сүрөт менен салыштырып, өсүмдүктөр башкаларга караганда алсыраган жерлерди издейбиз.',
+    zonesNow: 'Азыр', zonesChange: '16 күндө эмне өзгөрдү',
+    zonesFound: 'Өсүмдүктөр <b>талаанын {pct} %</b> алсырады (≈ {ha} га) — {where}.',
+    zonesNone: 'Ооруган жерлер көрүнбөйт: өсүмдүктөр бүт талаада бирдей өсүүдө.',
+    zoneCauseDry: 'Кургакчылыкка окшош: топурак кургак ({soil} %). Ушул жерди биринчи сугарыңыз.',
+    zoneCausePest: 'Топурак нымдуу — демек, маселе сууда эмес. Оору же зыянкечтер болушу мүмкүн: жакынкы күндөрү ошол жерди карап чыгыңыз.',
+    zoneCauseSlope: 'Бул жер эңкейиште: суу тез агып кетет, топурак жуулуп кеткен болушу мүмкүн. Карап чыгып, керек болсо кайра себиңиз.',
+    zonesShowMap: '🗺️ Картадан көрсөтүү',
+    howLink2: 'Спутник муну кантип көрөт →',
+    zonesWeak: 'алсыз', zonesStrong: 'соо', zonesDamaged: '16 күндө алсырады',
+    zonesWorse: 'начарлады', zonesSame: 'өзгөргөн жок', zonesBetter: 'жакшырды',
+    zonesCenter: 'талаанын ортосунда',
+    zonesParts: ['түндүк бөлүгүндө', 'түндүк-чыгыш бөлүгүндө', 'чыгыш бөлүгүндө', 'түштүк-чыгыш бөлүгүндө', 'түштүк бөлүгүндө', 'түштүк-батыш бөлүгүндө', 'батыш бөлүгүндө', 'түндүк-батыш бөлүгүндө'],
+    tgZones: 'Өсүмдүктөр талаанын {pct} % алсырады ({where}) — карап чыгыңыз',
+    smsZones: 'Талаанын {pct}% алсырады, карап чыгыңыз',
+    days: () => 'күн'
+  }
+};
+
+/* ---------- Состояние приложения ---------- */
+const state = {
+  lang: 'ru',
+  fieldId: null,
+  cropId: null,
+  data: null,          // данные текущего поля: { climate, forecast, soil, ndvi }
+  chart: null,
+  map: null,
+  fieldLayers: {},     // контуры и метки демо-полей
+  customField: null,   // точка, выбранная кликом/поиском
+  customLayers: null,
+  gridLayer: null, gridRenderer: null, gridCells: [], gridGen: 0, gridZoomOk: false,
+  overlayOn: true,
+  zoneView: 'now', zoneLayer: null, lastResult: null,
+  pointGen: 0,
+  mapStatusKey: '', mapStatusBusy: false,
+  climateCache: {}     // 40-летние ряды кэшируем, чтобы не пересчитывать при переключении
+};
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Мелкие помощники ---------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const round2 = v => Math.round(v * 100) / 100;
+
+function t(key, params) {
+  let s = I18N[state.lang][key] ?? I18N.ru[key] ?? key;
+  if (params) for (const [k, v] of Object.entries(params)) s = s.split('{' + k + '}').join(v);
+  return s;
+}
+function pluralRu(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
+const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+// Десятичная запятая и настоящий знак минуса
+const fmtNum = (v, d = 0) => v.toFixed(d).replace('.', ',').replace('-', '−');
+const fmtSigned = (v, d = 0) => (v > 0 ? '+' : '') + fmtNum(v, d);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Даты: ключ NASA POWER «YYYYMMDD» <-> Date (UTC, чтобы не зависеть от часового пояса)
+const powerKey = d => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+const keyToDate = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)));
+const isoToDate = s => new Date(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)));
+const fmtDate = d => pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
+const fmtDM = d => pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1);
+// День года -> «ДД.ММ» (берём невисокосный год как шаблон)
+const doyToDM = doy => fmtDM(new Date(Date.UTC(2025, 0, Math.round(doy))));
+const weekdayIdx = d => (d.getUTCDay() + 6) % 7; // 0 = понедельник
+
+const fieldById = id => (id === 'custom' ? state.customField : CONFIG.fields.find(f => f.id === id));
+const cropName = id => CONFIG.crops[id].name[state.lang];
+const mocksFor = field => field.mock || CONFIG.mocks[field.id];
+
+function fetchJson(url, ms = 8000) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .finally(() => clearTimeout(timer));
+}
+
+/* ---------- Анимация чисел ---------- */
+function animateNumber(el, to, decimals = 0, animate = true) {
+  const from = parseFloat(el.dataset.v);
+  el.dataset.v = to;
+  // В фоновой вкладке requestAnimationFrame стоит на паузе — сразу ставим итоговое значение
+  if (!animate || reducedMotion || document.hidden) { el.textContent = fmtNum(to, decimals); return; }
+  const start = isNaN(from) ? 0 : from;
+  const t0 = performance.now(), dur = 750;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    el.textContent = fmtNum(start + (to - start) * e, decimals);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function flash(el) {
+  if (reducedMotion) return;
+  el.classList.remove('refresh');
+  void el.offsetWidth; // перезапуск CSS-анимации
+  el.classList.add('refresh');
+}
+
+/* =====================================================================
+   РЕЛЬЕФ И МОДЕЛЬ МЕСТНОСТИ
+   Высоты — настоящие: открытые тайлы рельефа AWS Terrain Tiles (формат Terrarium),
+   собранные в основном из NASA SRTM. Без ключа и без лимита запросов.
+   Если тайл не загрузился — упрощённая модель рельефа Чуйской долины.
+   ===================================================================== */
+const Terrain = {
+  tiles: new Map(),    // «z/x/y» -> Promise<пиксели тайла | null>
+  live: null,          // false — последний расчёт хотя бы частично шёл по модели
+
+  tile(z, x, y) {
+    const key = z + '/' + x + '/' + y;
+    if (!this.tiles.has(key)) {
+      const p = new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => { img.src = ''; resolve(null); }, 10000);
+        img.onload = () => {
+          clearTimeout(timer);
+          try {
+            const c = document.createElement('canvas');
+            c.width = c.height = 256;
+            const g = c.getContext('2d', { willReadFrequently: true });
+            g.drawImage(img, 0, 0);
+            resolve(g.getImageData(0, 0, 256, 256).data);
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => { clearTimeout(timer); resolve(null); };
+        img.src = CONFIG.elevation.url.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+      }).then(d => { if (!d) this.tiles.delete(key); return d; }); // неудачный тайл попробуем снова позже
+      this.tiles.set(key, p);
+    }
+    return this.tiles.get(key);
+  },
+
+  // Высоты точек [[lat, lon], ...] по тайлам масштаба z
+  async get(points, z) {
+    const n = 2 ** z;
+    const pos = points.map(([lat, lon]) => {
+      const x = (lon + 180) / 360 * n;
+      const sin = Math.sin(lat * Math.PI / 180);
+      const y = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * n;
+      const tx = Math.floor(x), ty = Math.floor(y);
+      return { tx, ty, px: Math.min(255, Math.floor((x - tx) * 256)), py: Math.min(255, Math.floor((y - ty) * 256)) };
+    });
+    const keys = [...new Set(pos.map(q => q.tx + '/' + q.ty))];
+    const data = {};
+    await Promise.all(keys.map(async k => {
+      const [x, y] = k.split('/').map(Number);
+      data[k] = await this.tile(z, ((x % n) + n) % n, y);
+    }));
+    let ok = true;
+    const out = points.map((p, i) => {
+      const q = pos[i], d = data[q.tx + '/' + q.ty];
+      if (!d) { ok = false; return mockElevation(p[0], p[1]); }
+      const o = (q.py * 256 + q.px) * 4;
+      return d[o] * 256 + d[o + 1] + d[o + 2] / 256 - 32768; // кодировка Terrarium
+    });
+    this.live = ok;
+    return out;
+  }
+};
+
+// Плавный «шум» местности: одинаковый для одной точки, без резких скачков
+function smoothNoise(lat, lon) {
+  return (Math.sin(lat * 41.3 + lon * 17.9) + Math.sin(lat * 13.1 - lon * 29.7 + 1.3)) / 2;
+}
+
+// Запасная модель рельефа: дно Чуйской долины 550–900 м, на юге — хребет Кыргызский Ала-Тоо
+function mockElevation(lat, lon) {
+  const floor = 520 + Math.max(0, lon - 73.6) * 170;
+  const toRidge = 42.80 - lat + 0.05 * Math.sin(lon * 6);
+  const mountains = toRidge > 0 ? Math.min(3600, toRidge * 11000) : 0;
+  return Math.round(Math.max(300, floor + mountains + 60 * smoothNoise(lat, lon)));
+}
+
+/**
+ * Условия места: средняя годовая температура (по высоте и широте)
+ * и «природная» влажность корневого слоя (в предгорьях выпадает больше осадков).
+ * В рабочей версии — климатология NASA POWER и многолетние ряды SMAP для точки.
+ */
+function regionEnv(lat, lon, elev, slope) {
+  const m = CONFIG.model;
+  const tmean = m.baseT + m.lapse * (elev - m.baseElev) - m.latK * (lat - m.baseLat);
+  const foot = Math.exp(-(((elev - m.footElev) / m.footWidth) ** 2));
+  const moist = clamp(m.moistBase + m.moistFoot * foot + 0.06 * smoothNoise(lat, lon), 0.08, 0.75);
+  return { elev, slope, tmean, moist };
+}
+
+// Условия для демо-поля берём из его собственных данных
+function fieldEnv(field) {
+  return {
+    elev: field.elevation, slope: field.slope,
+    tmean: CONFIG.model.baseT + field.tempOffset,
+    moist: mocksFor(field).soil.sm_rootzone_wetness
+  };
+}
+
+/* ---------- Пригодность места для культуры ---------- */
+function trapezoid(v, [a, b, c, d]) {
+  if (v <= a || v >= d) return 0;
+  if (v < b) return (v - a) / (b - a);
+  if (v > c) return (d - v) / (d - c);
+  return 1;
+}
+
+/**
+ * Оценка 0–1 по «закону минимума»: итог определяет самый слабый фактор.
+ *  - тепло: средняя годовая температура против требований культуры;
+ *  - рельеф: уклон склона (технике тяжело, почву смывает);
+ *  - влага: если своей мало — место всё ещё годится, но только с поливом.
+ */
+function suitability(cropId, env) {
+  const c = CONFIG.crops[cropId];
+  const fT = trapezoid(env.tmean, c.temp);
+  const fS = env.slope <= c.slope[0] ? 1 : env.slope >= c.slope[1] ? 0 : 1 - (env.slope - c.slope[0]) / (c.slope[1] - c.slope[0]);
+  const fM = env.moist >= c.moist ? 1 : CONFIG.suit.irrigatedCap;
+  const score = Math.min(fT, fS, fM);
+  const cls = score >= CONFIG.suit.good ? 'good' : score >= CONFIG.suit.mid ? 'mid' : 'bad';
+  let reason = 'Ok';
+  if (score < 0.9) {
+    if (score === fT) reason = env.tmean < c.temp[1] ? 'Cold' : 'Hot';
+    else if (score === fS) reason = 'Steep';
+    else reason = 'Dry';
+    if (cls === 'bad' && reason !== 'Dry') reason += 'Bad';
+  }
+  return { score, cls, reason };
+}
+function suitText(s, env) {
+  return t('reason' + s.reason, {
+    elev: Math.round(env.elev), t: fmtNum(env.tmean, 1), slope: fmtNum(env.slope, 0), m: Math.round(env.moist * 100)
+  });
+}
+const SUIT_COLOR = { good: '#2E7D32', mid: '#F9A825', bad: '#D32F2F' };
+const SUIT_FILL = { good: .42, mid: .36, bad: .16 };
+const SUIT_TONE = { good: 'tone-good', mid: 'tone-mid', bad: 'tone-bad' };
+const suitLabel = cls => t('suit' + capitalize(cls));
+
+/* =====================================================================
+   СЛОЙ ДАННЫХ
+   Демо-поля и точки на карте получают моки в формате NASA POWER API.
+   Чтобы подключить реальные данные, достаточно заменить тело методов
+   на fetch — формат ответа уже совпадает с NASA POWER API.
+   ===================================================================== */
+const DataSource = {
+  // Суточная температура T2M за 1985–2025.
+  // Реальный запрос:
+  //   fetch(`${CONFIG.power.baseUrl}?parameters=T2M&community=AG&longitude=${f.lon}&latitude=${f.lat}` +
+  //         `&start=19850101&end=20251231&format=JSON`).then(r => r.json())
+  async climate(field) {
+    const key = field.lat.toFixed(4) + ',' + field.lon.toFixed(4) + ',' + field.tempOffset.toFixed(2);
+    if (!state.climateCache[key]) {
+      const [y0, y1] = CONFIG.climateYears;
+      state.climateCache[key] = mockPowerDaily(field, y0, y1);
+    }
+    return state.climateCache[key];
+  },
+  // Прогноз на 7 дней (T2M_MIN, T2M_MAX, PRECTOTCORR).
+  // NASA POWER прогнозов не даёт — в рабочей версии сюда подключается погодная модель (например, GFS).
+  async forecast(field) {
+    return toPowerSeries(CONFIG.demoDate, mocksFor(field).forecast);
+  },
+  // Влажность корневого слоя SMAP L4 (sm_rootzone_wetness, 0–1)
+  async soil(field) { return mocksFor(field).soil; },
+  // NDVI MODIS MOD13Q1 (16-дневные композиты)
+  async ndvi(field) { return mocksFor(field).ndvi; }
+};
+
+async function loadField(field) {
+  const [climate, forecast, soil, ndvi] = await Promise.all([
+    DataSource.climate(field), DataSource.forecast(field), DataSource.soil(field), DataSource.ndvi(field)
+  ]);
+  return { climate, forecast, soil, ndvi };
+}
+
+// Участок 500 × 500 м вокруг выбранной точки
+function makeCustomField(lat, lon, elev, slope) {
+  const env = regionEnv(lat, lon, elev, slope);
+  const dLat = 250 / 110540, dLon = 250 / (111320 * Math.cos(lat * Math.PI / 180));
+  const field = {
+    id: 'custom', custom: true, lat, lon,
+    elevation: Math.round(elev), slope, areaHa: 25,
+    tempOffset: env.tmean - CONFIG.model.baseT,
+    seed: Math.abs(Math.round(lat * 1000) * 31 + Math.round(lon * 1000)) % 100000,
+    outline: [[lat + dLat, lon - dLon], [lat + dLat, lon + dLon], [lat - dLat, lon + dLon], [lat - dLat, lon - dLon]]
+  };
+  field.mock = mockForPoint(field, env);
+  return field;
+}
+
+/* =====================================================================
+   РАСЧЁТЫ
+   ===================================================================== */
+
+/**
+ * Дата устойчивого перехода через порог (например, +5 °C).
+ * Берём 5-дневное скользящее среднее и ищем первый день (с 1 февраля),
+ * после которого среднее держится выше порога 30 дней подряд.
+ * Возвращает день года (1–366) или null.
+ */
+function transitionDoy(series, year, threshold, fill) {
+  const vals = [];
+  for (let d = 0; d < 182; d++) {
+    const v = series[powerKey(new Date(Date.UTC(year, 0, 1 + d)))];
+    vals.push(v == null || v === fill ? NaN : v);
+  }
+  const mean5 = vals.map((_, i) => {
+    let s = 0, c = 0;
+    for (let j = i - 2; j <= i + 2; j++) if (j >= 0 && j < vals.length && !isNaN(vals[j])) { s += vals[j]; c++; }
+    return c ? s / c : NaN;
+  });
+  for (let i = 31; i < mean5.length - 30; i++) {
+    let ok = true;
+    for (let j = i; j < i + 30; j++) if (!(mean5[j] > threshold)) { ok = false; break; }
+    if (ok) return i + 1;
+  }
+  return null;
+}
+
+// Линейная регрессия методом наименьших квадратов
+function linearTrend(xs, ys) {
+  const n = xs.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  const slope = den ? num / den : 0;
+  const intercept = my - slope * mx;
+  return { slope, at: x => intercept + slope * x };
+}
+
+function computeSowing(climate, threshold) {
+  const [y0, y1] = CONFIG.climateYears;
+  const series = climate.properties.parameter.T2M;
+  const fill = climate.header.fill_value;
+  const years = [], doys = [];
+  for (let y = y0; y <= y1; y++) {
+    const d = transitionDoy(series, y, threshold, fill);
+    if (d != null) { years.push(y); doys.push(d); }
+  }
+  // Если порог перейдён меньше чем в половине лет — сеять эту культуру здесь рискованно
+  if (years.length < (y1 - y0 + 1) / 2) return { tooCold: true, years, doys, threshold };
+  const trend = linearTrend(years, doys);
+  const shift = Math.round(trend.at(y0) - trend.at(y1)); // > 0 — сезон стал раньше
+  const targetYear = isoToDate(CONFIG.demoDate).getUTCFullYear();
+  const start = trend.at(targetYear) + CONFIG.sowing.soilWarmupDays;
+  return { years, doys, trend, shift, targetYear, threshold, from: start, to: start + CONFIG.sowing.windowDays };
+}
+
+// Разбираем ответ в формате POWER в массив дней
+function parseForecast(fc) {
+  const p = fc.properties.parameter;
+  return Object.keys(p.T2M_MAX).sort().map(k => ({
+    date: keyToDate(k), tmin: p.T2M_MIN[k], tmax: p.T2M_MAX[k], rain: p.PRECTOTCORR[k]
+  }));
+}
+
+// Риски по дням: заморозок, жара, засуха (серия сухих дней при сухой почве)
+function computeRisks(days, soilPct) {
+  const th = CONFIG.thresholds;
+  let dry = 0;
+  return days.map(d => {
+    dry = d.rain < 1 ? dry + 1 : 0;
+    const risks = [];
+    if (d.tmin <= th.frost) risks.push('frost');
+    if (d.tmax >= th.heat) risks.push('heat');
+    if (dry >= th.droughtDays && soilPct < th.soilDry) risks.push('drought');
+    return { ...d, risks, dryStreak: dry };
+  });
+}
+
+// Предупреждения: по одному на каждый тип риска
+function buildWarnings(days) {
+  const L = I18N[state.lang];
+  const warns = [];
+  const frost = days.find(d => d.risks.includes('frost'));
+  if (frost) warns.push({
+    type: 'frost', icon: '❄️', label: t('riskFrost'),
+    date: frost.date, temp: frost.tmin,
+    text: t('warnFrost', { day: L.weekIn[weekdayIdx(frost.date)], t: fmtNum(frost.tmin) }),
+    sub: `${L.weekIn[weekdayIdx(frost.date)]}, ${fmtNum(frost.tmin)} °C`
+  });
+  const heatDays = days.filter(d => d.risks.includes('heat'));
+  if (heatDays.length) {
+    const hot = heatDays.reduce((a, b) => (b.tmax > a.tmax ? b : a));
+    warns.push({
+      type: 'heat', icon: '🔥', label: t('riskHeat'), date: hot.date, temp: hot.tmax,
+      text: t('warnHeat', { day: L.weekIn[weekdayIdx(hot.date)], t: fmtNum(hot.tmax) }),
+      sub: `${L.weekIn[weekdayIdx(hot.date)]}, +${fmtNum(hot.tmax)} °C`
+    });
+  }
+  if (days.some(d => d.risks.includes('drought'))) {
+    const n = Math.max(...days.map(d => d.dryStreak));
+    warns.push({ type: 'drought', icon: '🌵', label: t('riskDrought'), text: t('warnDrought', { n }), sub: t('dryDays', { n, days: L.days(n) }) });
+  }
+  if (!warns.length) warns.push({ type: 'ok', icon: '👍', label: t('sumNoRisk'), text: t('warnNone'), sub: t('sumNoRiskSub') });
+  return warns;
+}
+
+function ndviClass(v) {
+  const th = CONFIG.thresholds.ndvi;
+  if (v < th.poor) return { key: 'Poor', tone: 'tone-bad' };
+  if (v < th.good) return { key: 'Mid', tone: 'tone-mid' };
+  return { key: 'Good', tone: 'tone-good' };
+}
+
+// Рекомендация по поливу с учётом осадков в ближайшие 3 дня
+function soilAdvice(pct, days) {
+  const th = CONFIG.thresholds;
+  const rain3 = days.slice(0, 3).reduce((s, d) => s + d.rain, 0);
+  if (pct >= th.soilOk) return { key: 'soilOk', text: 'soilOkText', tone: 'tone-good', cls: 'good', icon: '✅' };
+  if (rain3 >= th.rainSkip) return { key: 'soilWait', text: 'soilWaitRainText', tone: 'tone-blue', cls: 'blue', icon: '🌧️', rain: fmtNum(rain3, 1) };
+  if (pct < th.soilDry) return { key: 'soilWater', text: 'soilWaterText', tone: 'tone-bad', cls: 'bad', icon: '💧' };
+  return { key: 'soilWait', text: 'soilWaitText', tone: 'tone-mid', cls: 'mid', icon: '⏳' };
+}
+
+// Все выводы для текущего участка и культуры — одним объектом
+function computeAll(field, data) {
+  const crop = CONFIG.crops[state.cropId];
+  const env = fieldEnv(field);
+  const pct = Math.round(data.soil.sm_rootzone_wetness * 100);
+  const forecastDays = parseForecast(data.forecast);
+  const days = computeRisks(forecastDays, pct);
+  const suit = suitability(state.cropId, env);
+  const sow = computeSowing(data.climate, crop.sowTemp);
+  // Если для культуры здесь слишком холодно, короткое летнее «окно» не выдаём за срок сева
+  if (suit.reason === 'ColdBad') sow.tooCold = true;
+  return {
+    crop, env, pct, days, suit, sow,
+    advice: soilAdvice(pct, forecastDays),
+    warns: buildWarnings(days),
+    best: bestCrops(env),
+    zones: computeZones(field, data, pct)
+  };
+}
+
+// Все культуры, отсортированные по пригодности для этого места
+function bestCrops(env) {
+  return Object.keys(CONFIG.crops)
+    .map(id => ({ id, s: suitability(id, env) }))
+    .filter(x => x.s.score > 0)
+    .sort((a, b) => b.s.score - a.s.score)
+    .slice(0, 5);
+}
+
+/**
+ * Здоровье посевов по участкам поля: сетка 10 × 10 (как снимок Landsat 30 м).
+ * Демо: средний NDVI поля из мока + очаги угнетения, которых 16 дней назад не было.
+ * На сухом поле очагов больше, на слабом — они крупнее.
+ * В рабочей версии — разница двух снимков Landsat 8/9 или Sentinel-2 по пикселям.
+ */
+const ZONES_N = 10;
+function computeZones(field, data, pct) {
+  const comps = data.ndvi.composites;
+  const now = comps[comps.length - 1].ndvi, prev = comps[comps.length - 2].ndvi;
+  const rnd = mulberry32(field.seed * 977 + 13);
+  const patches = [];
+  // Сухое поле — два очага, здоровое и влажное — без очагов, остальные — один
+  const count = pct < CONFIG.thresholds.soilDry ? 2 : now >= CONFIG.thresholds.ndvi.good ? 0 : 1;
+  for (let k = 0; k < count; k++) patches.push({
+    x: 1.5 + rnd() * 7, y: 1.5 + rnd() * 7,
+    r: 0.9 + (1 - now) * 2.2 + rnd() * 0.8,
+    drop: 0.12 + (1 - now) * 0.2 + rnd() * 0.05
+  });
+  const cells = [];
+  for (let y = 0; y < ZONES_N; y++) for (let x = 0; x < ZONES_N; x++) {
+    const n = (rnd() - 0.5) * 0.06;
+    const hit = patches.reduce((sum, p) => sum + p.drop * Math.exp(-(((x - p.x) ** 2 + (y - p.y) ** 2) / (p.r * p.r))), 0);
+    cells.push({
+      x, y,
+      before: clamp(prev + n, 0.02, 0.95),
+      now: clamp(now + 0.03 + n - hit, 0.02, 0.95),
+      damaged: hit >= 0.1
+    });
+  }
+  const bad = cells.filter(c => c.damaged);
+  const share = bad.length / cells.length;
+  let part = null;
+  if (bad.length) {
+    // Где очаг: центр масс повреждённых участков относительно центра поля (y = 0 — север)
+    const cx = bad.reduce((a, c) => a + c.x, 0) / bad.length - (ZONES_N - 1) / 2;
+    const cy = (ZONES_N - 1) / 2 - bad.reduce((a, c) => a + c.y, 0) / bad.length;
+    part = Math.hypot(cx, cy) < 1.2 ? -1 : (Math.round(Math.atan2(cx, cy) * 180 / Math.PI / 45) + 8) % 8;
+  }
+  const cause = pct < CONFIG.thresholds.soilDry ? 'Dry' : field.slope > 5 ? 'Slope' : 'Pest';
+  return { cells, share, ha: share * field.areaHa, part, cause, soil: pct };
+}
+const zonesWhere = z => (z.part === -1 ? t('zonesCenter') : I18N[state.lang].zonesParts[z.part]);
+const zonesPct = z => Math.max(1, Math.round(z.share * 100));
+
+// NDVI -> цвет (красный — слабые растения, тёмно-зелёный — сильные)
+function ndviColor(v) {
+  const stops = [[0.1, [211, 47, 47]], [0.3, [249, 168, 37]], [0.5, [192, 202, 51]], [0.7, [67, 160, 71]], [0.85, [27, 94, 32]]];
+  if (v <= stops[0][0]) return `rgb(${stops[0][1]})`;
+  for (let i = 1; i < stops.length; i++) {
+    if (v <= stops[i][0]) {
+      const [a, ca] = stops[i - 1], [b, cb] = stops[i];
+      const k = (v - a) / (b - a);
+      return `rgb(${ca.map((c, j) => Math.round(c + (cb[j] - c) * k))})`;
+    }
+  }
+  return `rgb(${stops[stops.length - 1][1]})`;
+}
+function changeColor(d) {
+  return d <= -0.1 ? '#D32F2F' : d <= -0.03 ? '#FFB74D' : d < 0.03 ? '#E0E4DD' : '#66BB6A';
+}
+
+/* =====================================================================
+   ОТРИСОВКА БЛОКОВ
+   ===================================================================== */
+function renderStatic() {
+  document.documentElement.lang = state.lang === 'ky' ? 'ky' : 'ru';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
+  $('heroTitle').innerHTML = t('heroTitle');
+
+  const groups = I18N[state.lang].cropGroups;
+  $('cropSelect').innerHTML = Object.keys(groups).map(g => `<optgroup label="${groups[g]}">` +
+    Object.keys(CONFIG.crops).filter(id => CONFIG.crops[id].group === g)
+      .map(id => `<option value="${id}">${cropName(id)}</option>`).join('') + '</optgroup>').join('');
+  $('cropSelect').value = state.cropId;
+  renderFieldSelect();
+
+  $('mapLegend').innerHTML = ['good', 'mid', 'bad']
+    .map(c => `<span><i style="background:${SUIT_COLOR[c]};opacity:${c === 'bad' ? .55 : .85}"></i>${suitLabel(c)}</span>`).join('');
+  renderLegend();
+  renderMissions();
+  renderNdviDemo();
+  renderMapStatus();
+}
+
+// Название места: у демо-полей — город, у точки — село из поиска/обратного геокодинга
+function placeName(field) {
+  if (!field.custom) return field.place[state.lang];
+  return field.place || t('customName');
+}
+
+// Список участков: демо-поля + выбранная на карте точка
+function renderFieldSelect() {
+  const sel = $('fieldSelect');
+  const f = state.customField;
+  const custom = f ? `<option value="custom">${esc(t('customOption') + (f.place ? ' — ' + f.place : ''))}</option>` : '';
+  sel.innerHTML = custom + `<optgroup label="${t('presetGroup')}">` +
+    CONFIG.fields.map(x => `<option value="${x.id}">${x.name[state.lang]}</option>`).join('') + '</optgroup>';
+  sel.value = state.fieldId;
+}
+
+function renderPoint(field, r) {
+  $('pointName').textContent = field.custom ? '📍 ' + placeName(field) : field.name[state.lang];
+  const s = r.suit;
+  $('suitBox').innerHTML = `
+    <div class="suit-label">${t('suitTitle', { crop: r.crop.name[state.lang] })}</div>
+    <div class="suit-top">
+      <div class="suit-score">${Math.round(s.score * 100)}<small>%</small></div>
+      <span class="badge ${SUIT_TONE[s.cls]}">${suitLabel(s.cls)}</span>
+    </div>
+    <div class="suit-bar"><i style="width:${Math.max(3, s.score * 100)}%;background:${SUIT_COLOR[s.cls]}"></i></div>
+    <p class="suit-reason">${suitText(s, r.env)}</p>`;
+  $('bestCrops').innerHTML = r.best.map(b => `
+    <button type="button" data-crop="${b.id}" aria-pressed="${b.id === state.cropId}">
+      <i style="background:${SUIT_COLOR[b.s.cls]}"></i>${cropName(b.id)} <small>${Math.round(b.s.score * 100)}%</small>
+    </button>`).join('');
+  $('fieldInfo').innerHTML = `
+    <div><dt>${t('area')}</dt><dd>${field.custom ? t('customArea') : field.areaHa + ' ' + t('areaUnit')}</dd></div>
+    <div><dt>${t('coords')}</dt><dd>${field.lat.toFixed(3)}, ${field.lon.toFixed(3)}</dd></div>
+    <div><dt>${t('elevation')}</dt><dd>${field.elevation} ${t('elevUnit')}</dd></div>
+    <div><dt>${t('slope')}</dt><dd>${fmtNum(field.slope, 1)}°</dd></div>`;
+}
+
+function renderSummary(r) {
+  const cropN = r.crop.name[state.lang];
+  const sowTile = r.sow.tooCold
+    ? { cls: 'frost', value: t('sumTooCold'), sub: t('sumTooColdSub') }
+    : { cls: 'good', value: `${doyToDM(r.sow.from)} — ${doyToDM(r.sow.to)}`, sub: t('sumSowSub', { temp: r.sow.threshold }) };
+  const w = r.warns[0];
+  const riskCls = { frost: 'frost', heat: 'bad', drought: 'mid', ok: 'good' }[w.type];
+  const more = r.warns.length > 1 ? ` · ${t('sumMore', { n: r.warns.length - 1 })}` : '';
+  const z = r.zones;
+  const tiles = [
+    { href: '#nasa-srtm', icon: '📍', label: t('sumSuit', { crop: cropN }), cls: r.suit.cls,
+      value: `${Math.round(r.suit.score * 100)} % · ${suitLabel(r.suit.cls)}`, sub: suitText(r.suit, r.env) },
+    { href: '#sowCard', icon: r.crop.perennial ? '🌳' : '🌱', label: t(r.crop.perennial ? 'sumPlant' : 'sumSow'), ...sowTile },
+    { href: '#weekCard', icon: w.icon, label: t('sumRisk'), cls: riskCls, value: w.label + more, sub: w.sub },
+    { href: '#nasa-smap', icon: '💧', label: t('sumWater'), cls: r.advice.cls,
+      value: capitalize(waterShort(r.advice)), sub: t('sumWaterSub', { pct: r.pct }) },
+    { href: '#zonesCard', icon: '🔍', label: t('zonesTitle').replace('🔍 ', ''), cls: z.cells.some(c => c.damaged) ? 'bad' : 'good',
+      value: z.cells.some(c => c.damaged) ? `${zonesPct(z)} % · ≈ ${fmtNum(z.ha, z.ha < 10 ? 1 : 0)} ${t('areaUnit')}` : '0 %',
+      sub: z.cells.some(c => c.damaged) ? capitalize(zonesWhere(z)) : t('zonesNone') }
+  ];
+  $('summaryGrid').innerHTML = tiles.map(x => `
+    <a class="tile ${x.cls}" href="${x.href}">
+      <div class="tile-label"><span aria-hidden="true">${x.icon}</span>${x.label}</div>
+      <div class="tile-value">${x.value}</div>
+      <div class="tile-sub">${x.sub}</div>
+    </a>`).join('');
+}
+
+/* ---------- Сообщения фермеру: Telegram и SMS ---------- */
+const waterShort = advice => t('w_' + (advice.rain ? 'soilWaitRain' : advice.key));
+
+function smsText(field, r) {
+  const L = I18N[state.lang];
+  const s = r.sow;
+  const w = r.warns[0];
+  const sow = s.tooCold ? t('smsSowCold') : t(r.crop.perennial ? 'smsPlant' : 'smsSow', { from: doyToDM(s.from), to: doyToDM(s.to) });
+  const zones = r.zones.cells.some(c => c.damaged) ? ' ' + t('smsZones', { pct: zonesPct(r.zones) }) + '.' : '';
+  const risk = t('sms' + capitalize(w.type), { day: w.date ? L.weekShort[weekdayIdx(w.date)] : '', t: w.temp != null ? fmtNum(w.temp) : '' });
+  return t('smsTpl', {
+    place: placeName(field), crop: r.crop.name[state.lang].toLowerCase(),
+    suit: t('smsSuit' + capitalize(r.suit.cls)), sow, risk: capitalize(risk), water: waterShort(r.advice)
+  }) + zones;
+}
+
+// Сколько SMS займёт текст: кириллица — 70 символов в одном SMS, 67 в каждой части длинного
+function smsSegments(text) {
+  const gsm = /^[\x20-\x7E\n]*$/.test(text);
+  const [one, part] = gsm ? [160, 153] : [70, 67];
+  return text.length <= one ? 1 : Math.ceil(text.length / part);
+}
+
+function renderChannels(field, r) {
+  const place = placeName(field);
+  $('liveNote').textContent = t('liveNote', { place });
+
+  // SMS
+  const sms = smsText(field, r);
+  $('smsText').textContent = sms;
+  $('smsCount').textContent = t('smsCount', { c: sms.length, chars: I18N[state.lang].chars(sms.length), n: smsSegments(sms) });
+
+  // Telegram
+  const s = r.sow;
+  const ndvi = state.data.ndvi.composites.slice(-1)[0].ndvi;
+  // Другие культуры, которые здесь подходят
+  const alt = r.best.filter(b => b.id !== state.cropId && b.s.cls === 'good').slice(0, 3).map(b => cropName(b.id).toLowerCase());
+  const lines = [
+    `<b>🌾 ${esc(place)} · ${r.crop.name[state.lang]}</b>`,
+    `📍 ${t('tgSuit', { label: suitLabel(r.suit.cls).toLowerCase(), pct: Math.round(r.suit.score * 100) })}`,
+    `${r.crop.perennial ? '🌳' : '🌱'} ${s.tooCold ? t('tgSowCold') : t(r.crop.perennial ? 'tgPlant' : 'tgSow', { from: doyToDM(s.from), to: doyToDM(s.to) })}`,
+    ...r.warns.slice(0, 2).map(w => `${w.icon} ${capitalize(w.text)}`),
+    `💧 ${t('tgWater', { label: waterShort(r.advice) })}`,
+    `🛰️ ${t('tgSat', { label: t('tgNdvi' + ndviClass(ndvi).key) })}`,
+    ...(r.zones.cells.some(c => c.damaged) ? [`🔍 ${t('tgZones', { pct: zonesPct(r.zones), where: zonesWhere(r.zones) })}`] : []),
+    ...(alt.length ? [`🌾 ${t('tgBest', { list: alt.join(', ') })}`] : [])
+  ];
+  $('tgChat').innerHTML = `
+    <div class="bubble me">📍 ${esc(place)}<span class="time">07:59 ✓✓</span></div>
+    <div class="bubble bot">${lines.map(l => `<div class="line">${l}</div>`).join('')}<span class="time">08:00</span></div>
+    <div class="tg-btns"><span>${t('tgBtn1')}</span><span>${t('tgBtn2')}</span><span>${t('tgBtn3')}</span></div>`;
+}
+
+function renderSowing(r, animate) {
+  const s = r.sow;
+  const [y0, y1] = CONFIG.climateYears;
+  const L = I18N[state.lang];
+  const cropN = r.crop.name[state.lang];
+  $('sowHint').textContent = t('sowHint', { temp: s.threshold });
+  $('sowTitle').textContent = t(r.crop.perennial ? 'sowTitlePlant' : 'sowTitleSeed');
+
+  // Текстовый вывод: сначала окно сева, потом как сдвинулся сезон
+  if (s.tooCold) {
+    $('sowSummary').className = 'sow-summary cold';
+    $('sowSummary').innerHTML = `<div>${t('sowTooCold', { temp: s.threshold, crop: cropN })}</div>`;
+  } else {
+    const n = Math.abs(s.shift);
+    const head = n < 2 ? t('sowSame')
+      : t(s.shift > 0 ? 'sowEarlier' : 'sowLater', { n: `<span id="sowN">${n}</span>`, days: L.days(n) });
+    const len = CONFIG.sowing.windowDays;
+    $('sowSummary').className = 'sow-summary';
+    $('sowSummary').innerHTML = `
+      <div class="sow-window">${t(r.crop.perennial ? 'sowWindowPlant' : 'sowWindow', { crop: cropN, from: doyToDM(s.from), to: doyToDM(s.to) })}</div>
+      <div>${head}</div>
+      <div class="sow-note">${t('sowNote', { year: s.targetYear, temp: s.threshold, warm: CONFIG.sowing.soilWarmupDays, len, lenDays: L.days(len) })}</div>`;
+    if ($('sowN') && animate) { $('sowN').dataset.v = 0; animateNumber($('sowN'), n, 0, true); }
+  }
+
+  // График (спрятан под «Почему эти даты?»)
+  if (typeof Chart === 'undefined') {
+    const box = $('sowChart') && $('sowChart').parentElement;
+    if (box) box.innerHTML = `<div class="fallback">${t('chartFallback')}</div>`;
+    return;
+  }
+  const points = s.years.map((y, i) => ({ x: y, y: s.doys[i] }));
+  const trendLine = s.tooCold ? [] : [{ x: y0, y: s.trend.at(y0) }, { x: y1, y: s.trend.at(y1) }];
+
+  if (!state.chart) {
+    state.chart = new Chart($('sowChart'), {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'nearest', intersect: false },
+        scales: {
+          x: { type: 'linear', min: y0, max: y1, ticks: { stepSize: 5, callback: v => v }, grid: { display: false } },
+          y: { ticks: { callback: v => doyToDM(v), stepSize: 7 }, grid: { color: '#EEF1EE' } }
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'Inter' } } },
+          tooltip: {
+            callbacks: {
+              title: items => String(items[0].raw.x),
+              label: item => `${item.dataset.label}: ${doyToDM(item.raw.y)}`
+            }
+          }
+        }
+      }
+    });
+  }
+  state.chart.data.datasets = [
+    {
+      label: t('chartSeries', { temp: s.threshold }), data: points,
+      borderColor: '#2E7D32', backgroundColor: '#2E7D32', borderWidth: 2,
+      pointRadius: 3, pointHoverRadius: 6, tension: 0
+    },
+    {
+      label: t('chartTrend'), data: trendLine,
+      borderColor: '#F9A825', backgroundColor: '#F9A825', borderWidth: 3,
+      borderDash: [8, 6], pointRadius: 0, pointHoverRadius: 0
+    }
+  ];
+  state.chart.update(animate ? undefined : 'none');
+  if (animate) flash($('sowCard'));
+}
+
+function renderForecast(r) {
+  const days = r.days;
+  const L = I18N[state.lang];
+
+  $('forecastGrid').innerHTML = days.map((d, i) => {
+    const main = d.risks[0] || 'none';
+    const icon = d.tmin <= CONFIG.thresholds.frost ? '❄️' : d.rain >= 5 ? '🌧️' : d.rain >= 1 ? '🌦️' : d.tmax >= CONFIG.thresholds.heat ? '🔥' : '☀️';
+    const name = i === 0 ? t('today') : L.weekShort[weekdayIdx(d.date)];
+    return `
+      <div class="day ${main}" style="--i:${i}">
+        <div class="day-name">${name}</div>
+        <div class="day-date">${fmtDM(d.date)}</div>
+        <div class="day-icon" aria-hidden="true">${icon}</div>
+        <div class="day-temp">${fmtSigned(d.tmax)}° <span>${fmtSigned(d.tmin)}°</span></div>
+        <div class="day-rain">💧 ${fmtNum(d.rain, 1)}</div>
+      </div>`;
+  }).join('');
+
+  $('warnings').innerHTML = r.warns.map(w =>
+    `<div class="warning ${w.type}"><span class="warning-icon" aria-hidden="true">${w.icon}</span><span>${capitalize(w.text)}</span></div>`
+  ).join('');
+}
+
+function renderZones(field, r) {
+  const z = r.zones;
+  const view = state.zoneView;
+  const g = 100 / ZONES_N;
+  $('zonesSvg').innerHTML = z.cells.map(c => {
+    const fill = view === 'now' ? ndviColor(c.now) : changeColor(c.now - c.before);
+    const stroke = view === 'now' && c.damaged ? ' stroke="#B71C1C" stroke-width="1.4"' : '';
+    return `<rect x="${c.x * g + 0.4}" y="${c.y * g + 0.4}" width="${g - 0.8}" height="${g - 0.8}" rx="1.2" fill="${fill}"${stroke}/>`;
+  }).join('');
+  document.querySelectorAll('[data-zview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.zview === view)));
+
+  const found = z.cells.some(c => c.damaged);
+  $('zonesResult').className = 'zones-result ' + (found ? 'found' : 'clean');
+  $('zonesResult').innerHTML = found
+    ? `<p>${t('zonesFound', { pct: zonesPct(z), ha: fmtNum(z.ha, z.ha < 10 ? 1 : 0), where: zonesWhere(z) })}</p><p>${t('zoneCause' + z.cause, { soil: z.soil })}</p>`
+    : `<p>${t('zonesNone')}</p>`;
+  $('zonesLegend').innerHTML = view === 'now'
+    ? `<span>${t('zonesWeak')}</span><span class="ramp"></span><span>${t('zonesStrong')}</span><span class="dmg"></span><span>${t('zonesDamaged')}</span>`
+    : [['#D32F2F', 'zonesWorse'], ['#E0E4DD', 'zonesSame'], ['#66BB6A', 'zonesBetter']]
+        .map(([c, k]) => `<span style="display:inline-flex;gap:6px;align-items:center"><i style="width:12px;height:12px;border-radius:3px;background:${c}"></i>${t(k)}</span>`).join('');
+  if (state.zoneLayer) drawZonesOnMap(field, r);
+}
+
+// Те же участки — поверх поля на карте. Контур поля — четырёхугольник (СЗ, СВ, ЮВ, ЮЗ),
+// поэтому сетку натягиваем на него билинейно: участки повторяют форму поля
+function drawZonesOnMap(field, r) {
+  if (!state.map) return;
+  clearZonesOnMap();
+  const [tl, tr, br, bl] = field.outline;
+  const at = (u, v) => [0, 1].map(k => (1 - v) * ((1 - u) * tl[k] + u * tr[k]) + v * ((1 - u) * bl[k] + u * br[k]));
+  const N = ZONES_N;
+  state.zoneLayer = L.layerGroup(r.zones.cells.map(c => {
+    const fill = state.zoneView === 'now' ? ndviColor(c.now) : changeColor(c.now - c.before);
+    const corners = [at(c.x / N, c.y / N), at((c.x + 1) / N, c.y / N), at((c.x + 1) / N, (c.y + 1) / N), at(c.x / N, (c.y + 1) / N)];
+    return L.polygon(corners, {
+      color: '#B71C1C', weight: c.damaged && state.zoneView === 'now' ? 2 : 0, fillColor: fill, fillOpacity: .75, interactive: false
+    });
+  })).addTo(state.map);
+  return L.latLngBounds(field.outline);
+}
+function clearZonesOnMap() {
+  if (state.zoneLayer) { state.zoneLayer.remove(); state.zoneLayer = null; }
+}
+
+function renderLegend() {
+  $('legend').innerHTML = [
+    ['var(--frost)', 'riskFrost'], ['var(--red)', 'riskHeat'], ['var(--orange)', 'riskDrought'], ['var(--green)', 'riskNone']
+  ].map(([c, k]) => `<span><i style="background:${c}"></i>${t(k)}</span>`).join('') + `<span>💧 ${t('mm')}</span>`;
+}
+
+function renderMissions() {
+  const lang = state.lang;
+  $('missionsGrid').innerHTML = CONFIG.missions.map(m => `
+    <article class="card mission" id="nasa-${m.id}">
+      <div class="mission-head">
+        <div class="mission-icon" aria-hidden="true">${m.icon}</div>
+        <div><h3>${m.title}</h3><div class="mission-sub">${m.sub[lang]}</div></div>
+      </div>
+      <div class="mission-q">❓ ${m.question[lang]}</div>
+      <dl>
+        <div><dt>${t('missionHow')}</dt><dd>${m.how[lang]}</dd></div>
+        <div><dt>${t('missionGives')}</dt><dd>${m.gives[lang]}</dd></div>
+      </dl>
+      <div class="mission-foot">
+        <span>${m.spec[lang]}</span>
+        <a class="how-link" href="${m.link}">${t('missionUsed')}: ${m.used[lang]} →</a>
+      </div>
+    </article>`).join('');
+}
+
+// Интерактивное объяснение NDVI: ползунок «сухое ↔ здоровое растение»
+function renderNdviDemo() {
+  const h = $('ndviSlider').value / 100;
+  const red = Math.round(25 - 20 * h), nir = Math.round(28 + 24 * h);
+  const ndvi = (nir - red) / (nir + red);
+  const cls = ndviClass(ndvi);
+  // Цвет листа: от бурого к зелёному
+  const mix = (a, b) => Math.round(a + (b - a) * h);
+  $('leafPath').setAttribute('fill', `rgb(${mix(161, 67)},${mix(136, 160)},${mix(127, 71)})`);
+  $('barRed').style.width = (red / 60 * 100) + '%';
+  $('barNir').style.width = (nir / 60 * 100) + '%';
+  $('valRed').textContent = red + ' %';
+  $('valNir').textContent = nir + ' %';
+  $('ndviFormula').innerHTML = `
+    <code>NDVI = (ИК − К) / (ИК + К) = (${nir} − ${red}) / (${nir} + ${red}) = <b>${fmtNum(ndvi, 2)}</b></code>
+    <span class="badge ${cls.tone}">${t('ndvi' + cls.key)}</span>`;
+}
+
+/* =====================================================================
+   КАРТА (Leaflet + OpenStreetMap)
+   ===================================================================== */
+function initMap() {
+  if (typeof L === 'undefined') {
+    $('map').innerHTML = `<div class="fallback">${t('mapFallback')}</div>`;
+    document.querySelectorAll('.map-ui').forEach(el => { el.hidden = true; });
+    return;
+  }
+  const map = L.map('map', { scrollWheelZoom: false }).setView(CONFIG.map.center, CONFIG.map.zoom);
+  state.map = map;
+  // Колесо мыши зумит карту только после клика по ней, чтобы не мешать прокрутке страницы
+  map.on('click', () => map.scrollWheelZoom.enable());
+  map.getContainer().addEventListener('mouseleave', () => map.scrollWheelZoom.disable());
+
+  // Тайлы OpenStreetMap. При открытии файла двойным кликом (file://) браузер не передаёт
+  // Referer, и tile.openstreetmap.org может отказать — тогда берём тайлы CARTO на данных OSM.
+  const carto = () => L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd', maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; CARTO'
+  });
+  if (location.protocol === 'file:') {
+    carto().addTo(map);
+  } else {
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+    let errors = 0;
+    osm.on('tileerror', () => { if (++errors === 4) { map.removeLayer(osm); carto().addTo(map); } });
+  }
+
+  // Спутниковый снимок — чтобы видеть настоящие поля, а не только схему
+  state.satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, attribution: 'Снимки &copy; Esri, Maxar, Earthstar Geographics'
+  });
+
+  // Слой пригодности — над подложкой, под контурами полей
+  map.createPane('suit').style.zIndex = 390;
+  state.gridRenderer = L.canvas({ pane: 'suit', padding: 0.2 });
+  state.gridLayer = L.layerGroup().addTo(map);
+
+  // Демо-поля: контур + заметная метка (на мелком масштабе контур слишком маленький)
+  CONFIG.fields.forEach(f => {
+    const poly = L.polygon(f.outline, { color: '#37474F', weight: 2, fillOpacity: .1, bubblingMouseEvents: false })
+      .addTo(map).on('click', () => selectField(f.id));
+    const pin = L.circleMarker([f.lat, f.lon], { radius: 7, color: '#263238', weight: 2, fillColor: '#fff', fillOpacity: 1, bubblingMouseEvents: false })
+      .addTo(map).on('click', () => selectField(f.id));
+    [poly, pin].forEach(l => l.bindTooltip(() => f.name[state.lang], { direction: 'top' }));
+    state.fieldLayers[f.id] = { poly, pin };
+  });
+
+  // Клик по любому месту карты — разбираем эту точку
+  map.on('click', e => { const p = e.latlng.wrap(); selectPoint(p.lat, p.lng); });
+
+  let timer = null;
+  const later = () => { clearTimeout(timer); timer = setTimeout(refreshGrid, 300); };
+  map.on('moveend resize', later);
+  // Высота карты зависит от левой колонки — следим за размером контейнера
+  if ('ResizeObserver' in window) new ResizeObserver(() => map.invalidateSize()).observe($('map'));
+  refreshGrid();
+}
+
+function setSatellite(on) {
+  if (!state.map) return;
+  if (on) state.satLayer.addTo(state.map); else state.satLayer.remove();
+  $('satToggle').setAttribute('aria-pressed', String(on));
+}
+
+function setMapStatus(key, busy = false) {
+  state.mapStatusKey = key;
+  state.mapStatusBusy = busy;
+  renderMapStatus();
+}
+function renderMapStatus() {
+  const el = $('mapStatus');
+  let key = state.mapStatusKey;
+  if (!key && Terrain.live === false) key = 'statusOffline';
+  el.textContent = key ? t(key) : '';
+  el.classList.toggle('busy', state.mapStatusBusy);
+}
+
+/* ---------- Сетка пригодности по видимой области ---------- */
+const GRID_STEPS = [0.001, 0.0015, 0.002, 0.003, 0.004, 0.005, 0.0075, 0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5];
+const LAT_K = 0.75; // ячейки примерно квадратные на широте Кыргызстана
+
+function pickStep(b) {
+  const w = b.getEast() - b.getWest(), h = b.getNorth() - b.getSouth();
+  let step = GRID_STEPS.find(s => s >= w / CONFIG.grid.cols) || 0.5;
+  while ((w / step) * (h / (step * LAT_K)) > CONFIG.grid.maxCells) {
+    const i = GRID_STEPS.indexOf(step);
+    step = i >= 0 && i < GRID_STEPS.length - 1 ? GRID_STEPS[i + 1] : step * 2;
+  }
+  return step;
+}
+
+async function refreshGrid() {
+  const map = state.map;
+  if (!map) return;
+  const gen = ++state.gridGen;
+  if (map.getZoom() < CONFIG.grid.minZoom) {
+    state.gridCells = [];
+    state.gridZoomOk = false;
+    paintGrid();
+    setMapStatus('statusZoom');
+    return;
+  }
+  state.gridZoomOk = true;
+  const b = map.getBounds().pad(0.05);
+  const step = pickStep(b), dLat = step * LAT_K;
+  const i0 = Math.floor(b.getSouth() / dLat), i1 = Math.ceil(b.getNorth() / dLat);
+  const j0 = Math.floor(b.getWest() / step), j1 = Math.ceil(b.getEast() / step);
+  const rows = [], points = [];
+  for (let i = i0; i < i1; i++) {
+    const row = [];
+    for (let j = j0; j < j1; j++) {
+      const lat = (i + 0.5) * dLat, lon = (j + 0.5) * step;
+      row.push({ lat, lon, bounds: [[i * dLat, j * step], [(i + 1) * dLat, (j + 1) * step]] });
+      points.push([lat, lon]);
+    }
+    rows.push(row);
+  }
+
+  setMapStatus('statusLoading', true);
+  const elevs = await Terrain.get(points, clamp(Math.round(map.getZoom()), 3, 13));
+  if (gen !== state.gridGen) return; // карту успели сдвинуть — этот расчёт устарел
+  let k = 0;
+  rows.forEach(row => row.forEach(c => { c.elev = elevs[k++]; }));
+
+  // Уклон по разнице высот с соседними ячейками
+  const cells = [];
+  rows.forEach((row, i) => row.forEach((c, j) => {
+    const E = (ii, jj) => rows[clamp(ii, 0, rows.length - 1)][clamp(jj, 0, row.length - 1)].elev;
+    const dx = step * 111320 * Math.cos(c.lat * Math.PI / 180) * (j > 0 && j < row.length - 1 ? 2 : 1);
+    const dy = dLat * 110540 * (i > 0 && i < rows.length - 1 ? 2 : 1);
+    const gx = (E(i, j + 1) - E(i, j - 1)) / dx, gy = (E(i + 1, j) - E(i - 1, j)) / dy;
+    c.slope = Math.atan(Math.hypot(gx, gy)) * 180 / Math.PI;
+    c.env = regionEnv(c.lat, c.lon, c.elev, c.slope);
+    cells.push(c);
+  }));
+  state.gridCells = cells;
+  state.gridStep = step;
+  setMapStatus('');
+  paintGrid();
+}
+
+function paintGrid() {
+  if (!state.gridLayer) return;
+  state.gridLayer.clearLayers();
+  state.gridCells.forEach(c => { c.s = suitability(state.cropId, c.env); });
+  if (state.overlayOn) {
+    state.gridCells.forEach(c => {
+      L.rectangle(c.bounds, {
+        renderer: state.gridRenderer, pane: 'suit', stroke: false,
+        fillColor: SUIT_COLOR[c.s.cls], fillOpacity: SUIT_FILL[c.s.cls]
+      })
+        .bindTooltip(() => `<b>${Math.round(c.s.score * 100)} % · ${suitLabel(c.s.cls)}</b><br>${Math.round(c.elev)} ${t('elevUnit')} · ${fmtNum(c.slope, 0)}°<br>${suitText(c.s, c.env)}`,
+          { sticky: true, direction: 'top', opacity: .95 })
+        .addTo(state.gridLayer);
+    });
+  }
+  renderTopPlaces();
+}
+
+// Три лучших места в видимой области, не вплотную друг к другу
+function renderTopPlaces() {
+  const list = $('topPlaces');
+  $('topHint').textContent = t('topHint', { crop: cropName(state.cropId) });
+  if (!state.map || !state.gridZoomOk) { list.innerHTML = `<li class="top-hint">${t('topZoom')}</li>`; return; }
+  const view = state.map.getBounds();
+  const center = state.map.getCenter();
+  const km = c => {
+    const dy = (c.lat - center.lat) * 111.2;
+    const dx = (c.lon - center.lng) * 111.2 * Math.cos(c.lat * Math.PI / 180);
+    return { dx, dy, dist: Math.hypot(dx, dy) };
+  };
+  // При равной оценке (с шагом 5 %) выше то, что ближе к центру карты
+  const rank = c => Math.round(c.s.score * 20);
+  const sorted = state.gridCells
+    .filter(c => c.s.cls !== 'bad' && view.contains([c.lat, c.lon]))
+    .sort((a, b) => rank(b) - rank(a) || km(a).dist - km(b).dist);
+  const picked = [];
+  const minGap = state.gridStep * 3;
+  for (const c of sorted) {
+    if (picked.every(p => Math.hypot(p.lat - c.lat, p.lon - c.lon) > minGap)) picked.push(c);
+    if (picked.length === 3) break;
+  }
+  if (!picked.length) { list.innerHTML = `<li class="top-hint">${t('topEmpty')}</li>`; return; }
+  const L_ = I18N[state.lang];
+  list.innerHTML = picked.map((c, i) => {
+    const { dx, dy, dist } = km(c);
+    const dir = L_.dirs[(Math.round(Math.atan2(dx, dy) * 180 / Math.PI / 45) + 8) % 8];
+    const where = dist < 1
+      ? t('topHere', { elev: Math.round(c.elev) })
+      : t('topItem', { dist: fmtNum(dist, dist < 10 ? 1 : 0), dir, elev: Math.round(c.elev) });
+    return `<li><button type="button" data-i="${i}">
+      <span class="dot" style="background:${SUIT_COLOR[c.s.cls]}"></span>
+      <span class="pct">${Math.round(c.s.score * 100)} %</span><span>${where}</span></button></li>`;
+  }).join('');
+  list.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    const c = picked[+btn.dataset.i];
+    selectPoint(c.lat, c.lon);
+  }));
+}
+
+// Выделение выбранного участка на карте
+function styleFields(r) {
+  if (!state.map) return;
+  CONFIG.fields.forEach(f => {
+    const sel = f.id === state.fieldId;
+    const { poly, pin } = state.fieldLayers[f.id];
+    poly.setStyle({ color: sel ? '#0D47A1' : '#37474F', weight: sel ? 3 : 2, fillColor: sel ? '#1E88E5' : '#37474F', fillOpacity: sel ? .18 : .08 });
+    pin.setStyle({ fillColor: sel ? '#1E88E5' : '#fff', color: sel ? '#0D47A1' : '#263238' });
+  });
+  if (state.customLayers) {
+    const sel = state.fieldId === 'custom';
+    const color = sel && r ? SUIT_COLOR[r.suit.cls] : '#37474F';
+    state.customLayers.poly.setStyle({ color: sel ? '#0D47A1' : '#37474F', weight: sel ? 3 : 2, dashArray: '6 4', fillColor: color, fillOpacity: sel ? .3 : .1 });
+    state.customLayers.marker.setOpacity(sel ? 1 : .5);
+  }
+}
+
+function drawCustomField(field) {
+  if (!state.map) return;
+  if (state.customLayers) { state.customLayers.poly.remove(); state.customLayers.marker.remove(); }
+  const poly = L.polygon(field.outline, { bubblingMouseEvents: false }).addTo(state.map)
+    .on('click', () => selectField('custom'));
+  const marker = L.marker([field.lat, field.lon], {
+    icon: L.divIcon({ className: '', html: '<span class="pin-dot"></span>', iconSize: [20, 20], iconAnchor: [10, 10] }),
+    keyboard: false
+  }).addTo(state.map).on('click', () => selectField('custom'));
+  state.customLayers = { poly, marker };
+}
+
+/* =====================================================================
+   УПРАВЛЕНИЕ
+   ===================================================================== */
+async function selectField(id, { fly = true } = {}) {
+  const field = fieldById(id);
+  if (!field) return;
+  if (state.fieldId !== id || field.custom) clearZonesOnMap();
+  state.fieldId = id;
+  // У демо-поля своя культура; для точки на карте остаётся выбранная пользователем
+  if (!field.custom && field.crop !== state.cropId) {
+    state.cropId = field.crop;
+    $('cropSelect').value = field.crop;
+    paintGrid();
+  }
+  renderFieldSelect();
+  if (fly && !field.custom && state.map) {
+    const bounds = state.fieldLayers[id].poly.getBounds();
+    if (reducedMotion) state.map.fitBounds(bounds, { maxZoom: CONFIG.map.fieldZoom });
+    else state.map.flyToBounds(bounds, { maxZoom: CONFIG.map.fieldZoom, duration: 1.2 });
+  }
+  state.data = await loadField(field);
+  if (state.fieldId !== id) return;
+  renderAll(true);
+}
+
+// Разбор произвольной точки: высота и уклон по 5 точкам вокруг, затем все блоки
+async function selectPoint(lat, lon, { fly = false, name = null } = {}) {
+  const gen = ++state.pointGen;
+  $('pointCard').classList.add('loading');
+  if (fly && state.map) {
+    if (reducedMotion) state.map.setView([lat, lon], CONFIG.map.pointZoom);
+    else state.map.flyTo([lat, lon], CONFIG.map.pointZoom, { duration: 1.2 });
+  }
+  const d = 0.003;
+  const e = await Terrain.get([[lat, lon], [lat + d, lon], [lat - d, lon], [lat, lon + d], [lat, lon - d]], 12);
+  if (gen !== state.pointGen) return;
+  const dy = 2 * d * 110540, dx = 2 * d * 111320 * Math.cos(lat * Math.PI / 180);
+  const slope = Math.atan(Math.hypot((e[1] - e[2]) / dy, (e[3] - e[4]) / dx)) * 180 / Math.PI;
+  const field = makeCustomField(lat, lon, e[0], slope);
+  field.place = name;
+  state.customField = field;
+  drawCustomField(field);
+  renderMapStatus();
+  $('pointCard').classList.remove('loading');
+  await selectField('custom', { fly: false });
+  // Название ближайшего села — чтобы в SMS было «Ивановка», а не координаты
+  if (!name) {
+    const found = await reverseName(lat, lon);
+    if (found && state.customField === field) {
+      field.place = found;
+      renderFieldSelect();
+      if (state.fieldId === 'custom') renderAll(false);
+    }
+  }
+}
+
+async function reverseName(lat, lon) {
+  try {
+    const j = await fetchJson('https://nominatim.openstreetmap.org/reverse?format=json&zoom=14' +
+      '&lat=' + lat.toFixed(5) + '&lon=' + lon.toFixed(5) + '&accept-language=' + (state.lang === 'ky' ? 'ky,ru' : 'ru'), 8000);
+    const a = j.address || {};
+    return a.village || a.town || a.city || a.hamlet || a.suburb || a.county || a.state || null;
+  } catch (e) { return null; }
+}
+
+function renderAll(animate) {
+  const field = fieldById(state.fieldId);
+  const r = computeAll(field, state.data);
+  state.lastResult = r;
+  renderPoint(field, r);
+  renderSummary(r);
+  renderChannels(field, r);
+  renderZones(field, r);
+  renderSowing(r, animate);
+  renderForecast(r);
+  styleFields(r);
+  if (animate) { flash($('suitBox')); flash($('summaryGrid')); flash($('tgChat')); flash($('smsText')); }
+}
+
+function setLang(lang) {
+  state.lang = lang;
+  try { localStorage.setItem('agropulse-lang', lang); } catch (e) { /* хранилище недоступно — не страшно */ }
+  renderStatic();
+  renderTopPlaces();
+  if (state.data) renderAll(false);
+}
+
+function setCrop(id) {
+  state.cropId = id;
+  paintGrid();
+  if (state.data) renderAll(true);
+}
+
+async function searchPlace(q) {
+  const msg = $('searchMsg'), btn = $('searchBtn');
+  msg.className = 'form-msg';
+  msg.textContent = t('searching');
+  btn.disabled = true;
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1' +
+      '&viewbox=' + CONFIG.search.viewbox + '&accept-language=' + (state.lang === 'ky' ? 'ky,ru' : 'ru') +
+      '&q=' + encodeURIComponent(q);
+    const res = await fetchJson(url, 10000);
+    if (!res.length) { msg.className = 'form-msg error'; msg.textContent = t('notFound'); return; }
+    msg.textContent = res[0].display_name;
+    selectPoint(+res[0].lat, +res[0].lon, { fly: true, name: res[0].name || res[0].display_name.split(',')[0] });
+  } catch (e) {
+    msg.className = 'form-msg error';
+    msg.textContent = t('searchError');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function locateMe() {
+  const msg = $('searchMsg'), btn = $('locateBtn');
+  const fail = () => { msg.className = 'form-msg error'; msg.textContent = t('locateError'); btn.disabled = false; };
+  if (!navigator.geolocation) return fail();
+  msg.className = 'form-msg';
+  msg.textContent = t('locating');
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(p => {
+    msg.textContent = '';
+    btn.disabled = false;
+    selectPoint(p.coords.latitude, p.coords.longitude, { fly: true });
+  }, fail, { timeout: 10000, maximumAge: 600000 });
+}
+
+function initReveal() {
+  const items = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || reducedMotion) { items.forEach(el => el.classList.add('in')); return; }
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .08 });
+  items.forEach(el => io.observe(el));
+}
+
+// Подсветка текущего раздела в навигации
+function initSubnav() {
+  if (!('IntersectionObserver' in window)) return;
+  const links = [...document.querySelectorAll('#subnav a')];
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+  }), { rootMargin: '-45% 0px -50% 0px' });
+  links.forEach(a => { const s = document.querySelector(a.getAttribute('href')); if (s) io.observe(s); });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try { const saved = localStorage.getItem('agropulse-lang'); if (saved && I18N[saved]) state.lang = saved; } catch (e) { /* ignore */ }
+  state.fieldId = CONFIG.fields[0].id;
+  state.cropId = CONFIG.fields[0].crop;
+
+  renderStatic();
+  initMap();
+  initReveal();
+  initSubnav();
+
+  $('fieldSelect').addEventListener('change', e => selectField(e.target.value));
+  $('cropSelect').addEventListener('change', e => setCrop(e.target.value));
+  $('searchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = $('searchInput').value.trim();
+    if (q) searchPlace(q);
+  });
+  $('locateBtn').addEventListener('click', locateMe);
+  $('satToggle').addEventListener('click', () => setSatellite($('satToggle').getAttribute('aria-pressed') !== 'true'));
+  $('layerToggle').addEventListener('click', () => {
+    state.overlayOn = !state.overlayOn;
+    $('layerToggle').setAttribute('aria-pressed', String(state.overlayOn));
+    paintGrid();
+  });
+  $('ndviSlider').addEventListener('input', renderNdviDemo);
+  document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+  $('bestCrops').addEventListener('click', e => {
+    const b = e.target.closest('[data-crop]');
+    if (b) { $('cropSelect').value = b.dataset.crop; setCrop(b.dataset.crop); }
+  });
+  document.querySelectorAll('[data-zview]').forEach(b => b.addEventListener('click', () => {
+    state.zoneView = b.dataset.zview;
+    if (state.lastResult) renderZones(fieldById(state.fieldId), state.lastResult);
+  }));
+  $('zonesMapBtn').addEventListener('click', () => {
+    if (!state.map || !state.lastResult) return;
+    const bounds = drawZonesOnMap(fieldById(state.fieldId), state.lastResult);
+    if (!bounds) return;
+    setSatellite(true);
+    $('sec-demo').querySelector('.map-card').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+    state.map.flyToBounds(bounds, { maxZoom: 16, padding: [30, 30], duration: reducedMotion ? 0 : 1.2 });
+  });
+  // График спрятан в <details> — после раскрытия подгоняем его под ширину
+  $('sowDetails').addEventListener('toggle', () => { if (state.chart) state.chart.resize(); });
+
+  // На старте — обзор всей долины со слоем пригодности и первое демо-поле
+  selectField(state.fieldId, { fly: false });
+});
+</script>
+
+<!-- =====================================================================
+     CONFIG: настройки и демо-данные (моки)
+     Структура повторяет ответы NASA POWER API (temporal/daily/point, JSON):
+       { type: "Feature", geometry, properties: { parameter: { T2M: { "YYYYMMDD": значение } } }, header, parameters }
+     Чтобы перейти на реальные данные, замените методы DataSource (выше) на fetch —
+     форматы уже совпадают, остальной код менять не нужно.
+     ===================================================================== -->
+<script>
+const CONFIG = {
+  // Дата «сегодня» для демо (весна — время сева). Подставьте new Date().toISOString().slice(0,10) для текущей даты.
+  demoDate: '2026-04-20',
+  climateYears: [1985, 2025],
+
+  power: {
+    baseUrl: 'https://power.larc.nasa.gov/api/temporal/daily/point',
+    community: 'AG'
+  },
+  // Тайлы высот AWS Terrain Tiles (Terrarium, в основе NASA SRTM), бесплатно и без ключа
+  elevation: { url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png' },
+  // Поиск сёл (OpenStreetMap Nominatim); viewbox — приоритет Центральной Азии
+  search: { viewbox: '69,44,81,39' },
+
+  // Пороги для рекомендаций
+  thresholds: {
+    ndvi: { poor: 0.3, good: 0.6 },   // NDVI: < 0.3 плохо, 0.3–0.6 средне, > 0.6 хорошо
+    soilDry: 30, soilOk: 45,          // % насыщения корневого слоя
+    rainSkip: 5,                      // мм за 3 дня — можно не поливать
+    frost: 0, heat: 30,               // °C: мин. ≤ 0 — заморозок, макс. ≥ 30 — жара
+    droughtDays: 5                    // дней подряд без осадков (< 1 мм)
+  },
+
+  // Окно сева: переход через порог культуры + прогрев почвы, длительность окна
+  sowing: { soilWarmupDays: 7, windowDays: 21 },
+
+  // Модель местности: температура падает на 6,5 °C на каждый километр высоты,
+  // в предгорьях (около 1400 м) влаги больше, чем на дне долины
+  model: {
+    baseT: 11.5, baseElev: 760, baseLat: 42.905, lapse: -0.0065, latK: 0.6,
+    moistBase: 0.24, moistFoot: 0.22, footElev: 1400, footWidth: 600
+  },
+
+  // Требования культур:
+  //   temp  — средняя годовая температура места, °C: [нижний предел, оптимум от, оптимум до, верхний предел]
+  //   moist — доля влаги корневого слоя, ниже которой нужен полив
+  //   slope — уклон, °: [до какого всё хорошо, с какого пахать нельзя]
+  //   sowTemp — порог среднесуточной температуры для начала сева
+  //   group — группа в списке; perennial — многолетняя (сажают саженцы, а не сеют)
+  crops: {
+    wheat:     { group: 'grain', name: { ru: 'Яровая пшеница', ky: 'Жаздык буудай' }, temp: [4.5, 7.5, 13, 17], moist: 0.28, slope: [5, 12], sowTemp: 5 },
+    barley:    { group: 'grain', name: { ru: 'Ячмень', ky: 'Арпа' }, temp: [3, 6, 12, 16], moist: 0.22, slope: [6, 14], sowTemp: 5 },
+    corn:      { group: 'grain', name: { ru: 'Кукуруза', ky: 'Жүгөрү' }, temp: [8.5, 10.5, 15, 20], moist: 0.40, slope: [3, 8], sowTemp: 10 },
+    beet:      { group: 'industrial', name: { ru: 'Сахарная свёкла', ky: 'Кант кызылчасы' }, temp: [7.5, 9.5, 14, 18], moist: 0.42, slope: [3, 7], sowTemp: 6 },
+    sunflower: { group: 'industrial', name: { ru: 'Подсолнечник', ky: 'Күн карама' }, temp: [7, 9, 15, 20], moist: 0.25, slope: [4, 10], sowTemp: 8 },
+    cotton:    { group: 'industrial', name: { ru: 'Хлопок', ky: 'Пахта' }, temp: [11, 13, 18, 22], moist: 0.40, slope: [2, 6], sowTemp: 12 },
+    potato:    { group: 'veg', name: { ru: 'Картофель', ky: 'Картошка' }, temp: [2.5, 5, 10, 14], moist: 0.38, slope: [4, 9], sowTemp: 7 },
+    beans:     { group: 'veg', name: { ru: 'Фасоль', ky: 'Төө буурчак' }, temp: [7, 9, 14, 18], moist: 0.35, slope: [5, 10], sowTemp: 10 },
+    raspberry: { group: 'garden', perennial: true, name: { ru: 'Малина', ky: 'Малина' }, temp: [4, 6.5, 11, 15], moist: 0.40, slope: [6, 15], sowTemp: 5 },
+    apple:     { group: 'garden', perennial: true, name: { ru: 'Яблоня', ky: 'Алма' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    apricot:   { group: 'garden', perennial: true, name: { ru: 'Абрикос', ky: 'Өрүк' }, temp: [8.5, 10.5, 15, 19], moist: 0.25, slope: [8, 20], sowTemp: 6 }
+  },
+
+  // Пригодность: ≥ 0,7 — подходит, ≥ 0,35 — с условиями; сухое место с поливом не выше 0,6
+  suit: { good: 0.7, mid: 0.35, irrigatedCap: 0.6 },
+
+  // Сетка слоя «Где сажать»: ~34 ячейки по ширине карты, не больше 1400 ячеек
+  grid: { cols: 34, maxCells: 1400, minZoom: 8 },
+
+  map: { center: [42.82, 74.95], zoom: 9, fieldZoom: 13, pointZoom: 12 },
+
+  // Демо-поля в Чуйской области: контуры настоящих пашен, обведённые по спутниковому снимку Esri World Imagery
+  fields: [
+    {
+      id: 'tokmok',
+      place: { ru: 'Токмок', ky: 'Токмок' },
+      name: { ru: 'Поле №1 — Токмок', ky: '№1 талаа — Токмок' },
+      crop: 'wheat',
+      areaHa: 6, lat: 42.8372, lon: 75.3565, elevation: 857, slope: 0.4,
+      tempOffset: -0.59,   // по высоте поля: −6,5 °C на километр
+      seed: 11,
+      outline: [[42.83831, 75.35424], [42.83764, 75.35787], [42.83612, 75.35980], [42.83682, 75.35424]]
+    },
+    {
+      id: 'kant',
+      place: { ru: 'Кант', ky: 'Кант' },
+      name: { ru: 'Поле №2 — Кант', ky: '№2 талаа — Кант' },
+      crop: 'beet',
+      areaHa: 48, lat: 42.9131, lon: 74.8876, elevation: 720, slope: 0.4,
+      tempOffset: 0.26,   // по высоте поля: −6,5 °C на километр
+      seed: 23,
+      outline: [[42.91494, 74.88042], [42.91494, 74.89468], [42.91055, 74.89468], [42.91180, 74.88042]]
+    },
+    {
+      id: 'kemin',
+      place: { ru: 'Кемин', ky: 'Кемин' },
+      name: { ru: 'Поле №3 — Кемин', ky: '№3 талаа — Кемин' },
+      crop: 'barley',
+      areaHa: 53, lat: 42.782, lon: 75.6167, elevation: 1058, slope: 0.5,
+      tempOffset: -1.86,   // по высоте поля: −6,5 °C на километр
+      seed: 37,
+      outline: [[42.78398, 75.61080], [42.78398, 75.62497], [42.77999, 75.62315], [42.77999, 75.60797]]
+    }
+  ],
+
+  // Моки по полям: SMAP (влажность), MODIS (NDVI), прогноз на 7 дней с CONFIG.demoDate
+  mocks: {
+    tokmok: {
+      soil: { product: 'SPL4SMGP', date: '2026-04-19', sm_rootzone_wetness: 0.38 },
+      ndvi: { product: 'MOD13Q1', composites: [
+        { date: '2026-03-22', ndvi: 0.41 }, { date: '2026-04-07', ndvi: 0.52 }
+      ] },
+      forecast: {
+        T2M_MIN:     [5, 3, 1, -2, 1, 4, 6],
+        T2M_MAX:     [17, 15, 12, 9, 13, 17, 19],
+        PRECTOTCORR: [0, 2.4, 6.8, 1.2, 0, 0, 0]
+      }
+    },
+    kant: {
+      soil: { product: 'SPL4SMGP', date: '2026-04-19', sm_rootzone_wetness: 0.52 },
+      ndvi: { product: 'MOD13Q1', composites: [
+        { date: '2026-03-22', ndvi: 0.63 }, { date: '2026-04-07', ndvi: 0.71 }
+      ] },
+      forecast: {
+        T2M_MIN:     [9, 10, 11, 12, 13, 12, 11],
+        T2M_MAX:     [24, 26, 28, 30, 31, 29, 25],
+        PRECTOTCORR: [0, 0, 0, 0, 0, 1.5, 3.0]
+      }
+    },
+    kemin: {
+      soil: { product: 'SPL4SMGP', date: '2026-04-19', sm_rootzone_wetness: 0.22 },
+      ndvi: { product: 'MOD13Q1', composites: [
+        { date: '2026-03-22', ndvi: 0.30 }, { date: '2026-04-07', ndvi: 0.27 }
+      ] },
+      forecast: {
+        T2M_MIN:     [2, 1, -1, 0, 3, 4, 5],
+        T2M_MAX:     [16, 18, 19, 21, 22, 22, 20],
+        PRECTOTCORR: [0, 0, 0, 0, 0, 0, 0]
+      }
+    }
+  },
+
+  // Карточки блока «Как спутники NASA помогают»
+  missions: [
+    {
+      id: 'smap', icon: '💧', title: 'SMAP', link: '#summaryGrid',
+      sub: { ru: 'Soil Moisture Active Passive · на орбите с 2015 года', ky: 'Soil Moisture Active Passive · 2015-жылдан бери орбитада' },
+      question: { ru: 'Поливать ли сегодня?', ky: 'Бүгүн сугаруу керекпи?' },
+      how: {
+        ru: 'Влажная почва «светится» в микроволнах слабее сухой. Радиометр SMAP ловит это излучение с высоты 685 км — сквозь облака, днём и ночью.',
+        ky: 'Нымдуу топурак микротолкундарда кургак топуракка караганда алсызыраак «жаркырайт». SMAP радиометри бул нурланууну 685 км бийиктиктен кармайт — булут аркылуу, күндүз да, түнү да.'
+      },
+      gives: {
+        ru: 'Влажность верхних 5 см почвы, а модель L4 пересчитывает её на корневой слой до 1 м. Видно, когда влаги станет мало, ещё до того как растения завянут.',
+        ky: 'Топурактын үстүңкү 5 см нымдуулугу, ал эми L4 модели аны 1 м чейинки тамыр катмарына кайра эсептейт. Өсүмдүктөр соолуганга чейин эле нымдуулук азайганы көрүнөт.'
+      },
+      used: { ru: 'совет по поливу', ky: 'сугаруу боюнча кеңеш' },
+      spec: { ru: '9 км · каждые 2–3 дня', ky: '9 км · ар 2–3 күндө' }
+    },
+    {
+      id: 'modis', icon: '🌱', title: 'MODIS и Landsat', link: '#zonesCard',
+      sub: { ru: 'Спутники Terra, Aqua, Landsat 8 и 9', ky: 'Terra, Aqua, Landsat 8 жана 9 спутниктери' },
+      question: { ru: 'Здоровы ли посевы и где на поле проблема?', ky: 'Эгин сообу жана талаанын кайсы жеринде көйгөй бар?' },
+      how: {
+        ru: 'Камеры снимают поле в красном и ближнем инфракрасном свете. Здоровый лист красный свет поглощает, а инфракрасный отражает — из этой разницы считается NDVI (пример выше).',
+        ky: 'Камералар талааны кызыл жана жакынкы инфракызыл жарыкта тартат. Соо жалбырак кызыл жарыкты сиңирет, инфракызылды чагылтат — ушул айырмадан NDVI эсептелет (жогорудагы мисал).'
+      },
+      gives: {
+        ru: 'Карту здоровья посевов: где растения сильные, а где угнетены — от засухи, вредителей или вымерзания. Проблему видно раньше, чем глазом с края поля.',
+        ky: 'Эгиндин ден соолугунун картасы: өсүмдүктөр кайда күчтүү, кайда начар — кургакчылыктан, зыянкечтерден же үшүктөн. Көйгөй талаанын четинен көз менен көргөнгө чейин эле көрүнөт.'
+      },
+      used: { ru: 'где на поле больные растения', ky: 'талаадагы ооруган өсүмдүктөр' },
+      spec: { ru: '250 м (MODIS) · 30 м (Landsat) · раз в 8–16 дней', ky: '250 м (MODIS) · 30 м (Landsat) · ар 8–16 күндө' }
+    },
+    {
+      id: 'power', icon: '🌡️', title: 'NASA POWER', link: '#sowCard',
+      sub: { ru: 'Спутники CERES и GPM + реанализ MERRA-2', ky: 'CERES жана GPM спутниктери + MERRA-2 реанализи' },
+      question: { ru: 'Когда сеять в этом году?', ky: 'Быйыл качан себүү керек?' },
+      how: {
+        ru: 'Объединяет спутниковые измерения солнечной радиации и осадков с моделью атмосферы — получается непрерывный ряд погоды для любой точки Земли с 1981 года.',
+        ky: 'Күн радиациясынын жана жаан-чачындын спутниктик өлчөөлөрүн атмосфера модели менен бириктирет — 1981-жылдан бери Жердин каалаган чекити үчүн үзгүлтүксүз аба ырайы катары алынат.'
+      },
+      gives: {
+        ru: 'Суточную температуру и осадки за 40 лет. По ним видно, когда почва прогревается для вашей культуры и насколько раньше стал начинаться сезон.',
+        ky: '40 жылдык суткалык температура жана жаан-чачын. Алар боюнча топурак өсүмдүгүңүз үчүн качан жылыганы жана сезон канчалык эрте башталып калганы көрүнөт.'
+      },
+      used: { ru: 'когда сеять', ky: 'качан себүү' },
+      spec: { ru: '~50 км · каждый день · с 1981 года', ky: '~50 км · күн сайын · 1981-жылдан' }
+    },
+    {
+      id: 'srtm', icon: '⛰️', title: 'SRTM / NASADEM', link: '#sec-demo',
+      sub: { ru: 'Радарная съёмка с шаттла Endeavour, 2000 год', ky: 'Endeavour шаттлынан радардык тартуу, 2000-жыл' },
+      question: { ru: 'Где на моей земле можно сажать?', ky: 'Жеримдин кайсы жерине себүүгө болот?' },
+      how: {
+        ru: 'За 11 дней радар шаттла снял высоту почти всей суши Земли. NASADEM — обновлённая NASA версия этой карты высот.',
+        ky: 'Шаттлдын радары 11 күндө Жер кургактыгынын дээрлик баарынын бийиктигин тарткан. NASADEM — бул бийиктик картасынын NASA жаңырткан версиясы.'
+      },
+      gives: {
+        ru: 'Высоту и крутизну склонов. На каждые 100 м вверх в среднем на 0,65 °C холоднее, а на крутых склонах тяжело технике и дожди смывают почву. Вместе с климатом и влагой это даёт слой «Где сажать».',
+        ky: 'Бийиктик жана эңкейиштердин тиктиги. Ар 100 м өйдө орточо 0,65 °C суугураак, ал эми тик эңкейиштерде техника кыйналат жана жаан топуракты жууп кетет. Климат жана нымдуулук менен бирге бул «Кайда себүү» катмарын берет.'
+      },
+      used: { ru: 'карта «Где сажать»', ky: '«Кайда себүү» картасы' },
+      spec: { ru: '30 м · вся суша от 60° с. ш. до 56° ю. ш.', ky: '30 м · 60° т. к. – 56° т. к. аралыгындагы бардык кургактык' }
+    }
+  ]
+};
+
+/* ---------- Генераторы моков в формате NASA POWER ---------- */
+
+// Детерминированный генератор случайных чисел — моки одинаковые при каждом открытии
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(rnd) {
+  let u = 0;
+  while (u === 0) u = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd());
+}
+
+/**
+ * Суточная T2M для точки поля за годы y0..y1 — как ответ
+ * GET /api/temporal/daily/point?parameters=T2M&community=AG&...
+ * Модель: годовой ход температуры Чуйской долины + поправка на высоту
+ * + потепление ~0,065 °C/год + аномалии года и погодный «шум».
+ */
+function mockPowerDaily(field, y0, y1) {
+  const T2M = {};
+  for (let y = y0; y <= y1; y++) {
+    const rReg = mulberry32(y * 7919);                 // общая погода региона в этом году
+    const rLoc = mulberry32(y * 104729 + field.seed);  // местные отличия поля
+    const anomaly = gauss(rReg) * 1.2 + gauss(rLoc) * 0.4;
+    let noise = 0;
+    for (let d = new Date(Date.UTC(y, 0, 1)); d.getUTCFullYear() === y; d.setUTCDate(d.getUTCDate() + 1)) {
+      const doy = Math.floor((d - Date.UTC(y, 0, 1)) / 864e5) + 1;
+      noise = 0.8 * noise + gauss(rReg) * 1.0 + gauss(rLoc) * 0.3;
+      const clim = 11.5 - 14 * Math.cos(2 * Math.PI * (doy - 18) / 365);
+      const v = clim + field.tempOffset + 0.065 * (y - 1985) + anomaly + noise;
+      T2M[powerKey(d)] = Math.round(v * 100) / 100;
+    }
+  }
+  return {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [field.lon, field.lat, field.elevation] },
+    properties: { parameter: { T2M } },
+    header: {
+      title: 'NASA/POWER Source Native Resolution Daily Data (MOCK)',
+      api: { version: 'v2.x', name: 'POWER Daily API' },
+      sources: ['MERRA2'], fill_value: -999,
+      start: y0 + '0101', end: y1 + '1231'
+    },
+    parameters: { T2M: { units: 'C', longname: 'Temperature at 2 Meters' } }
+  };
+}
+
+/**
+ * Моки SMAP, MODIS и прогноза для произвольной точки на карте.
+ * Влажность — из модели местности, NDVI зависит от влаги и тепла,
+ * прогноз — региональный (как у поля №1), сдвинутый по высоте и с поправкой на осадки.
+ */
+function mockForPoint(field, env) {
+  const n = smoothNoise(field.lat, field.lon);
+  const ndvi = clamp(0.1 + env.moist * 0.8 + clamp(env.tmean - 6, -6, 5) * 0.025 + n * 0.04, 0.04, 0.86);
+  const prev = clamp(ndvi - 0.03 - 0.08 * (env.moist - 0.3), 0.02, 0.9);
+  const base = CONFIG.mocks.tokmok.forecast;
+  const dT = field.tempOffset - CONFIG.fields[0].tempOffset;
+  const rainK = clamp(0.4 + env.moist * 1.6, 0.3, 1.6);
+  return {
+    soil: { product: 'SPL4SMGP', date: '2026-04-19', sm_rootzone_wetness: round2(env.moist) },
+    ndvi: { product: 'MOD13Q1', composites: [
+      { date: '2026-03-22', ndvi: round2(prev) }, { date: '2026-04-07', ndvi: round2(ndvi) }
+    ] },
+    forecast: {
+      T2M_MIN: base.T2M_MIN.map(v => Math.round(v + dT)),
+      T2M_MAX: base.T2M_MAX.map(v => Math.round(v + dT)),
+      PRECTOTCORR: base.PRECTOTCORR.map(v => Math.round(v * rainK * 10) / 10)
+    }
+  };
+}
+
+// Массивы прогноза -> объект POWER-формата с ключами «YYYYMMDD», начиная с startIso
+function toPowerSeries(startIso, arrays) {
+  const start = isoToDate(startIso);
+  const parameter = {};
+  for (const [name, values] of Object.entries(arrays)) {
+    parameter[name] = {};
+    values.forEach((v, i) => {
+      parameter[name][powerKey(new Date(start.getTime() + i * 864e5))] = v;
+    });
+  }
+  return {
+    type: 'Feature',
+    properties: { parameter },
+    header: { title: 'AgroPulse 7-day forecast (MOCK, POWER-like format)', fill_value: -999 },
+    parameters: {
+      T2M_MIN: { units: 'C', longname: 'Temperature at 2 Meters Minimum' },
+      T2M_MAX: { units: 'C', longname: 'Temperature at 2 Meters Maximum' },
+      PRECTOTCORR: { units: 'mm/day', longname: 'Precipitation Corrected' }
+    }
+  };
+}
+</script>
+</body>
+</html>
