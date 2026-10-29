@@ -12,6 +12,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.20.2/dist/leaflet-geoman.css">
+<script src="https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.20.2/dist/leaflet-geoman.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@3.0.5/dist-browser/geotiff.js"></script>
 
 <style>
   /* ===== Дизайн-токены ===== */
@@ -126,13 +129,27 @@
   .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
   .facts span { background: #fff; border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); }
   .hero-art-wrap { position: relative; }
-  .hero-art { width: 100%; height: auto; display: block; }
-  .sat { animation: float 5s ease-in-out infinite; transform-origin: center; }
-  .beam { animation: beam 3s ease-in-out infinite; }
-  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-  @keyframes beam { 0%, 100% { opacity: .12; } 50% { opacity: .3; } }
+  .hero-shot {
+    position: relative; aspect-ratio: 6 / 5; border-radius: 28px; overflow: hidden; isolation: isolate;
+    background: linear-gradient(135deg, #3E5B2E, #7A8C4A 55%, #A58F5B); box-shadow: 0 24px 60px rgba(20, 40, 25, .25);
+  }
+  #heroMap { position: absolute; inset: 0; background: transparent; }
+  #heroMap .leaflet-control-attribution { font-size: 9px; background: rgba(0, 0, 0, .35); color: #eee; }
+  #heroMap .leaflet-control-attribution a { color: #fff; }
+  .shot-chip {
+    position: absolute; z-index: 1000; left: 14px; top: 14px; display: flex; align-items: center; gap: 8px;
+    background: rgba(15, 25, 18, .72); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.3;
+  }
+  .shot-chip b { display: block; font-size: 14px; }
+  .shot-chip .rec { width: 8px; height: 8px; border-radius: 50%; background: #FF5252; box-shadow: 0 0 0 4px rgba(255, 82, 82, .3); flex: none; animation: blink 1.6s infinite; }
+  .shot-scale {
+    position: absolute; z-index: 1000; left: 14px; bottom: 26px; display: flex; align-items: center; gap: 8px;
+    background: rgba(15, 25, 18, .72); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 12px;
+  }
+  .shot-scale .ramp { width: 70px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, #D32F2F, #F9A825, #C0CA33, #43A047, #1B5E20); }
   .hero-sms {
-    position: absolute; right: 4%; bottom: 6%; width: 58%; max-width: 270px;
+    position: absolute; z-index: 1001; right: 4%; bottom: 8%; width: 58%; max-width: 270px;
     background: #fff; border-radius: 18px 18px 4px 18px; padding: 12px 14px; font-size: 14px;
     box-shadow: 0 12px 30px rgba(20, 40, 25, .18); animation: pop-in .6s .4s ease both;
   }
@@ -318,6 +335,18 @@
     border: 2px solid var(--green); border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .land { margin-top: 12px; font-size: 13px; }
+  .land-title { color: var(--muted); font-weight: 600; }
+  .land-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; margin-top: 6px; background: var(--line); }
+  .land-bar i { display: block; height: 100%; }
+  .land-items { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: var(--muted); }
+  .land-items span { display: inline-flex; align-items: center; gap: 5px; }
+  .land-items i { width: 9px; height: 9px; border-radius: 2px; }
+  .land-warn { margin-top: 6px; color: #8A5A00; font-weight: 600; }
+  .draw-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-draw { background: #FFF3C4; color: #5B4300; border: 1.5px solid #F9D46B; }
+  .btn-draw[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); }
+  .draw-note { font-size: 13px; color: var(--muted); margin-top: -6px; }
   .pin-dot { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(30, 136, 229, .25), 0 2px 6px rgba(0, 0, 0, .3); }
 
   /* ===== Демо: совет ===== */
@@ -477,7 +506,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .reveal, .refresh, .day, .sat, .beam, .hero-sms, .live-dot { animation: none !important; transition: none !important; opacity: 1; transform: none; }
+    .reveal, .refresh, .day, .hero-sms, .live-dot, .shot-chip .rec { animation: none !important; transition: none !important; opacity: 1; transform: none; }
   }
 </style>
 </head>
@@ -524,41 +553,11 @@
         <div class="facts"><span data-i18n="heroFact1"></span><span data-i18n="heroFact2"></span><span data-i18n="heroFact3"></span></div>
       </div>
       <div class="hero-art-wrap reveal">
-        <svg class="hero-art" viewBox="0 0 480 400" role="img" aria-label="Спутник над полем">
-          <defs>
-            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D6EBFB"/><stop offset="1" stop-color="#F1F8E9"/></linearGradient>
-            <clipPath id="frame"><rect x="0" y="0" width="480" height="400" rx="36"/></clipPath>
-          </defs>
-          <g clip-path="url(#frame)">
-            <rect width="480" height="400" fill="url(#sky)"/>
-            <circle cx="392" cy="78" r="46" fill="#FFD54F" opacity=".28"/>
-            <circle cx="392" cy="78" r="30" fill="#FFD54F"/>
-            <path d="M0 240 L70 170 L120 210 L200 120 L270 200 L330 150 L410 215 L480 180 V400 H0Z" fill="#B7C6CF"/>
-            <path d="M200 120 L222 145 L208 142 L196 152 L184 140Z M330 150 L346 166 L334 164 L322 170Z" fill="#fff"/>
-            <polygon class="beam" points="150,128 40,318 300,318" fill="#F9A825"/>
-            <path d="M0 280 Q120 236 250 270 T480 262 V400 H0Z" fill="#9CCC65"/>
-            <path d="M0 312 Q210 282 480 306 V400 H0Z" fill="#7CB342"/>
-            <g stroke="#558B2F" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7">
-              <path d="M20 340 Q220 316 460 334"/><path d="M10 362 Q220 338 470 356"/><path d="M0 384 Q220 360 480 378"/>
-            </g>
-            <g transform="translate(368 262)">
-              <rect x="0" y="12" width="40" height="28" rx="3" fill="#FFF8E1"/>
-              <path d="M-6 14 L20 -6 L46 14Z" fill="#D84315"/>
-              <rect x="15" y="24" width="10" height="16" fill="#8D6E63"/>
-            </g>
-            <g class="sat">
-              <g transform="translate(150 110) rotate(-18)">
-                <rect x="-62" y="-11" width="40" height="22" rx="3" fill="#1E88E5"/>
-                <rect x="22" y="-11" width="40" height="22" rx="3" fill="#1E88E5"/>
-                <path d="M-48 -11V11M-35 -11V11M36 -11V11M49 -11V11M-62 0H-22M22 0H62" stroke="#90CAF9" stroke-width="1.5"/>
-                <rect x="-22" y="-3" width="44" height="6" fill="#90A4AE"/>
-                <rect x="-16" y="-17" width="32" height="34" rx="7" fill="#ECEFF1" stroke="#78909C" stroke-width="2"/>
-                <circle cx="0" cy="22" r="6" fill="#F9A825"/>
-                <path d="M0 -17 V-28" stroke="#78909C" stroke-width="2"/><circle cx="0" cy="-30" r="3" fill="#78909C"/>
-              </g>
-            </g>
-          </g>
-        </svg>
+        <div class="hero-shot">
+          <div id="heroMap" role="img" aria-label="Спутниковый снимок поля у Кемина"></div>
+          <div class="shot-chip"><span class="rec" aria-hidden="true"></span><div><b data-i18n="shotTitle"></b><span data-i18n="shotSub"></span></div></div>
+          <div class="shot-scale"><span data-i18n="zonesWeak"></span><span class="ramp"></span><span data-i18n="zonesStrong"></span></div>
+        </div>
         <div class="hero-sms"><small>AgroPulse · SMS</small><span data-i18n="heroSms"></span></div>
       </div>
     </div>
@@ -652,10 +651,14 @@
             </div>
             <div class="form-msg" id="searchMsg" role="status"></div>
           </form>
-          <button type="button" class="btn btn-ghost" id="locateBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-            <span data-i18n="locate"></span>
-          </button>
+          <div class="draw-row">
+            <button type="button" class="btn btn-ghost" id="locateBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              <span data-i18n="locate"></span>
+            </button>
+            <button type="button" class="btn btn-draw" id="drawBtn" aria-pressed="false"><span id="drawBtnText"></span></button>
+          </div>
+          <p class="draw-note" data-i18n="drawNote"></p>
           <div class="ctrl-row">
             <div>
               <label class="field-label" for="cropSelect" data-i18n="cropLabel"></label>
@@ -672,7 +675,7 @@
           <div id="map"></div>
           <div class="map-status map-pill" id="mapStatus" role="status"></div>
           <div class="map-ui top">
-            <button type="button" class="map-pill layer-toggle" id="satToggle" aria-pressed="false">
+            <button type="button" class="map-pill layer-toggle" id="satToggle" aria-pressed="true">
               <span class="switch" aria-hidden="true"></span><span data-i18n="satellite"></span>
             </button>
             <button type="button" class="map-pill layer-toggle" id="layerToggle" aria-pressed="true">
@@ -688,6 +691,7 @@
             <a class="how-link" href="#nasa-srtm" data-i18n="howTerrain"></a>
           </div>
           <div class="suit" id="suitBox"></div>
+          <div class="land" id="landBox"></div>
           <div class="best">
             <div class="best-title" data-i18n="bestTitle"></div>
             <div class="best-list" id="bestCrops"></div>
@@ -835,12 +839,13 @@
 const I18N = {
   ru: {
     navIdea: 'Идея', navChannels: 'Как получит фермер', navDemo: 'Попробовать', navNasa: 'Откуда данные', navCost: 'Стоимость', navNext: 'Что дальше',
-    heroBadge: '🛰️ Прототип для хакатона · данные NASA',
+    heroBadge: '🛰️ Данные NASA для фермеров Кыргызстана',
     heroTitle: 'Спутник NASA подскажет фермеру, <em>где и когда сеять</em>',
     heroText: 'Фермер называет своё село и получает простой совет на кыргызском или русском: что здесь вырастет, когда сеять и когда беречь посевы от заморозка и засухи. В Telegram или обычным SMS — даже без интернета.',
     heroTry: 'Попробовать на карте', heroHow: 'Как фермер получит совет',
     heroFact1: '🛰️ 4 источника данных NASA', heroFact2: '💬 Telegram и SMS', heroFact3: '🆓 Бесплатно для фермера',
-    heroSms: '❄️ В четверг ночью заморозок до −2 °C. Отложите посев и укройте всходы.',
+    heroSms: '🌵 Поле у Кемина: на юго-востоке растения ослабли — похоже на засуху. Полейте этот участок первым.',
+    shotTitle: 'Поле у Кемина · 53 га', shotSub: 'спутниковый снимок и здоровье посевов',
     ideaKicker: 'Зачем это нужно',
     ideaTitle: 'Погода изменилась, а календарь посева — нет',
     ideaHint: 'Весна приходит раньше, но поздние заморозки и засуха никуда не делись. Ошибка на неделю может стоить урожая.',
@@ -888,7 +893,7 @@ const I18N = {
     smsFrost: '{day} заморозок {t}°C, укройте всходы', smsHeat: '{day} жара +{t}°C', smsDrought: 'засуха, нужен полив', smsOk: 'опасной погоды нет',
     demoKicker: 'Попробуйте сами',
     demoTitle: 'Выберите место — получите совет',
-    demoHint: 'Найдите село, нажмите «Где я» или кликните по карте. Цвет показывает, где выбранная культура вырастет хорошо.',
+    demoHint: 'Найдите село, нажмите «Где я», кликните по карте или обведите границы своего поля. Цвет показывает, где культура вырастет хорошо; дома и вода не закрашиваются.',
     searchLabel: 'Найти село',
     searchPh: 'Например, «Ивановка»',
     searchBtn: 'Найти', searching: 'Ищем…',
@@ -965,7 +970,7 @@ const I18N = {
     ndviRed: 'Красный свет (отражено)', ndviNir: 'Инфракрасный свет (отражено)',
     missionHow: 'Как измеряет', missionGives: 'Что даёт фермеру', missionUsed: 'Где в AgroPulse',
     honestTitle: 'Честно: что в прототипе настоящее',
-    honestText: 'Настоящие: карта, поиск сёл и рельеф — высоты из открытых тайлов AWS Terrain Tiles, собранных в основном из NASA SRTM. Значения SMAP, MODIS и NASA POWER пока подготовлены заранее в формате NASA API, прогноз — тоже демо. Telegram и SMS на этой странице — макеты с настоящими текстами; бот и SMS-шлюз запускаем на пилоте. Города и водоёмы пока не исключаются из слоя «Где сажать».',
+    honestText: 'Настоящие: карта, поиск сёл и рельеф — высоты из открытых тайлов AWS Terrain Tiles, собранных в основном из NASA SRTM. Значения SMAP, MODIS и NASA POWER пока подготовлены заранее в формате NASA API, прогноз — тоже демо. Telegram и SMS на этой странице — макеты с настоящими текстами; бот и SMS-шлюз запускаем на пилоте. Где пашня, а где дома и вода — по карте ESA WorldCover 10 м (2021).',
     costKicker: 'Сколько это стоит',
     costTitle: 'Для фермера — бесплатно',
     costHint: 'Мы специально выбрали самые дешёвые каналы, чтобы сервис работал без денег фермера.',
@@ -983,7 +988,7 @@ const I18N = {
     n1Tag: 'Сейчас', n1T: 'Работающий прототип', n1: 'Карта «где сажать», расчёт сроков сева и рисков, готовые тексты для Telegram и SMS.',
     n2Tag: 'Весна 2027', n2T: 'Пилот в Чуйской области', n2: 'Telegram-бот и SMS-шлюз для 20–30 фермеров. Сравниваем наши советы с тем, что было на поле.',
     n3Tag: 'Дальше', n3T: 'Вся страна', n3: 'Больше культур, ежедневные данные SMAP и MODIS, голосовые сообщения для тех, кому трудно читать.',
-    footer: 'AgroPulse — прототип для хакатона. Данные спутников в демо подготовлены в формате NASA POWER API.',
+    footer: 'AgroPulse — спутниковые данные NASA в простых советах для фермеров Кыргызстана.',
     mapFallback: 'Карта не загрузилась — проверьте подключение к интернету.',
     chartFallback: 'График не загрузился — проверьте подключение к интернету.',
     weekShort: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
@@ -1012,16 +1017,34 @@ const I18N = {
     zonesParts: ['в северной части', 'в северо-восточной части', 'в восточной части', 'в юго-восточной части', 'в южной части', 'в юго-западной части', 'в западной части', 'в северо-западной части'],
     tgZones: 'Растения ослабли на {pct} % поля ({where}) — осмотрите',
     smsZones: 'Ослабло {pct}% поля, осмотрите',
+    drawStart: '✏️ Свои границы', drawStop: '✖ Отменить',
+    drawNote: 'Поставьте точки по углам своего поля — посчитаем именно его.',
+    drawHint: 'Кликайте по углам поля. Закончить — двойной клик или нажатие на первую точку. Отмена — Esc.',
+    drawnArea: '{ha} га · ваши границы',
+    drawEdit: 'Углы поля можно двигать прямо на карте — всё пересчитается.',
+    landTitle: 'Что на этой земле — снимок ESA WorldCover, 10 м',
+    landLoading: 'Смотрим снимок: где пашня, а где дома…',
+    lcCrop: 'пашня', lcOther: 'пастбища, кусты, лес', lcBuilt: 'дома и постройки', lcWater: 'вода',
+    landWarn: 'В границах есть постройки ({built} %) — их не засеять.',
+    reasonBuilt: 'Здесь в основном дома и постройки ({built} %) — это не поле.',
+    reasonWater: 'Здесь вода — это не поле.',
+    legendNone: 'без цвета — дома и вода',
+    statusNoLand: 'Карта типов земель недоступна — дома пока не исключаются',
+    zonesBuilt: 'постройки — не считаем',
+    notField: 'Здесь дома или вода, а не поле — выберите участок с пашней.',
+    smsNotField: 'AgroPulse {place}: здесь дома или вода, а не поле. Выберите участок с пашней.',
+    sumNoField: 'Нет поля',
     days: n => pluralRu(n, 'день', 'дня', 'дней')
   },
   ky: {
     navIdea: 'Идея', navChannels: 'Дыйканга кантип жетет', navDemo: 'Байкап көрүү', navNasa: 'Маалымат кайдан', navCost: 'Баасы', navNext: 'Андан ары',
-    heroBadge: '🛰️ Хакатон үчүн прототип · NASA маалыматтары',
+    heroBadge: '🛰️ Кыргызстандын дыйкандары үчүн NASA маалыматтары',
     heroTitle: 'NASA спутниги дыйканга <em>кайда жана качан себүүнү</em> айтып берет',
     heroText: 'Дыйкан айылынын атын айтат жана кыргыз же орус тилинде жөнөкөй кеңеш алат: бул жерде эмне өсөт, качан себүү керек жана эгинди үшүктөн, кургакчылыктан качан сактоо керек. Telegram аркылуу же жөнөкөй SMS менен — интернет жок болсо да.',
     heroTry: 'Картадан байкап көрүү', heroHow: 'Дыйкан кеңешти кантип алат',
     heroFact1: '🛰️ NASAнын 4 маалымат булагы', heroFact2: '💬 Telegram жана SMS', heroFact3: '🆓 Дыйкан үчүн акысыз',
-    heroSms: '❄️ Бейшемби түнү −2 °C чейин үшүк. Себүүнү кийинкиге калтырып, өнүмдөрдү жабыңыз.',
+    heroSms: '🌵 Кемин жанындагы талаа: түштүк-чыгышта өсүмдүктөр алсырады — кургакчылыкка окшош. Ушул жерди биринчи сугарыңыз.',
+    shotTitle: 'Кемин жанындагы талаа · 53 га', shotSub: 'спутник сүрөтү жана эгиндин ден соолугу',
     ideaKicker: 'Бул эмне үчүн керек',
     ideaTitle: 'Аба ырайы өзгөрдү, а себүү календары — жок',
     ideaHint: 'Жаз эрте келет, бирок кеч үшүк жана кургакчылык жоголгон жок. Бир жумалык ката түшүмгө турушу мүмкүн.',
@@ -1069,7 +1092,7 @@ const I18N = {
     smsFrost: '{day} үшүк {t}°C, өнүмдөрдү жабыңыз', smsHeat: '{day} ысык +{t}°C', smsDrought: 'кургакчылык, сугаруу керек', smsOk: 'коркунучтуу аба ырайы жок',
     demoKicker: 'Өзүңүз байкап көрүңүз',
     demoTitle: 'Жерди тандаңыз — кеңеш алыңыз',
-    demoHint: 'Айылды табыңыз, «Мен кайдамын» баскычын басыңыз же картаны басыңыз. Түс тандалган өсүмдүк кайсы жерде жакшы өсөрүн көрсөтөт.',
+    demoHint: 'Айылды табыңыз, «Мен кайдамын» баскычын басыңыз, картаны басыңыз же талааңыздын чек арасын тартыңыз. Түс өсүмдүк кайда жакшы өсөрүн көрсөтөт; үйлөр жана суу боёлбойт.',
     searchLabel: 'Айылды табуу',
     searchPh: 'Мисалы, «Ивановка»',
     searchBtn: 'Табуу', searching: 'Издөөдө…',
@@ -1146,7 +1169,7 @@ const I18N = {
     ndviRed: 'Кызыл жарык (чагылган)', ndviNir: 'Инфракызыл жарык (чагылган)',
     missionHow: 'Кантип өлчөйт', missionGives: 'Дыйканга эмне берет', missionUsed: 'AgroPulse’та кайда',
     honestTitle: 'Чынын айтсак: прототипте эмне чыныгы',
-    honestText: 'Чыныгы: карта, айылдарды издөө жана рельеф — бийиктиктер негизинен NASA SRTM маалыматынан түзүлгөн AWS Terrain Tiles ачык тайлдарынан алынат. SMAP, MODIS жана NASA POWER маанилери азырынча NASA API форматында алдын ала даярдалган, болжол да — демо. Бул беттеги Telegram жана SMS — чыныгы тексттери бар макеттер; бот жана SMS-шлюз пилотто ишке киргизилет. Шаарлар жана суу сактагычтар «Кайда себүү» катмарынан азырынча чыгарылбайт.',
+    honestText: 'Чыныгы: карта, айылдарды издөө жана рельеф — бийиктиктер негизинен NASA SRTM маалыматынан түзүлгөн AWS Terrain Tiles ачык тайлдарынан алынат. SMAP, MODIS жана NASA POWER маанилери азырынча NASA API форматында алдын ала даярдалган, болжол да — демо. Бул беттеги Telegram жана SMS — чыныгы тексттери бар макеттер; бот жана SMS-шлюз пилотто ишке киргизилет. Кайда айдоо жер, кайда үйлөр жана суу — ESA WorldCover 10 м (2021) картасы боюнча.',
     costKicker: 'Бул канча турат',
     costTitle: 'Дыйкан үчүн — акысыз',
     costHint: 'Кызмат дыйкандын акчасысыз иштеши үчүн эң арзан каналдарды атайын тандадык.',
@@ -1164,7 +1187,7 @@ const I18N = {
     n1Tag: 'Азыр', n1T: 'Иштеген прототип', n1: '«Кайда себүү» картасы, себүү мөөнөттөрүн жана коркунучтарды эсептөө, Telegram жана SMS үчүн даяр тексттер.',
     n2Tag: '2027-жылдын жазы', n2T: 'Чүй облусунда пилот', n2: '20–30 дыйкан үчүн Telegram-бот жана SMS-шлюз. Кеңештерибизди талаада болгон нерсе менен салыштырабыз.',
     n3Tag: 'Андан ары', n3T: 'Бүт өлкө', n3: 'Көбүрөөк өсүмдүктөр, күнүмдүк SMAP жана MODIS маалыматтары, окуганы кыйын болгондор үчүн үн билдирүүлөрү.',
-    footer: 'AgroPulse — хакатон үчүн прототип. Демодогу спутник маалыматтары NASA POWER API форматында даярдалган.',
+    footer: 'AgroPulse — NASA спутник маалыматтары Кыргызстандын дыйкандары үчүн жөнөкөй кеңештерде.',
     mapFallback: 'Карта жүктөлгөн жок — интернет байланышын текшериңиз.',
     chartFallback: 'График жүктөлгөн жок — интернет байланышын текшериңиз.',
     weekShort: ['Дш', 'Шш', 'Шр', 'Бш', 'Жм', 'Иш', 'Жк'],
@@ -1192,6 +1215,23 @@ const I18N = {
     zonesParts: ['түндүк бөлүгүндө', 'түндүк-чыгыш бөлүгүндө', 'чыгыш бөлүгүндө', 'түштүк-чыгыш бөлүгүндө', 'түштүк бөлүгүндө', 'түштүк-батыш бөлүгүндө', 'батыш бөлүгүндө', 'түндүк-батыш бөлүгүндө'],
     tgZones: 'Өсүмдүктөр талаанын {pct} % алсырады ({where}) — карап чыгыңыз',
     smsZones: 'Талаанын {pct}% алсырады, карап чыгыңыз',
+    drawStart: '✏️ Өз чек арам', drawStop: '✖ Токтотуу',
+    drawNote: 'Талааңыздын бурчтарына чекит коюңуз — так ошол талааны эсептейбиз.',
+    drawHint: 'Талаанын бурчтарын басыңыз. Бүтүрүү — эки жолу басуу же биринчи чекитти басуу. Токтотуу — Esc.',
+    drawnArea: '{ha} га · сиздин чек ара',
+    drawEdit: 'Талаанын бурчтарын картада жылдырса болот — баары кайра эсептелет.',
+    landTitle: 'Бул жерде эмне бар — ESA WorldCover сүрөтү, 10 м',
+    landLoading: 'Сүрөттү карап жатабыз: кайда айдоо жер, кайда үйлөр…',
+    lcCrop: 'айдоо жер', lcOther: 'жайыт, бадал, токой', lcBuilt: 'үйлөр жана имараттар', lcWater: 'суу',
+    landWarn: 'Чек ара ичинде имараттар бар ({built} %) — аларга эгин себилбейт.',
+    reasonBuilt: 'Бул жерде негизинен үйлөр жана имараттар ({built} %) — бул талаа эмес.',
+    reasonWater: 'Бул жерде суу — бул талаа эмес.',
+    legendNone: 'түссүз — үйлөр жана суу',
+    statusNoLand: 'Жер түрлөрүнүн картасы жеткиликсиз — үйлөр азырынча чыгарылбайт',
+    zonesBuilt: 'имараттар — эсептелбейт',
+    notField: 'Бул жерде үйлөр же суу, талаа эмес — айдоо жери бар тилкени тандаңыз.',
+    smsNotField: 'AgroPulse {place}: бул жерде үйлөр же суу, талаа эмес. Айдоо жери бар тилкени тандаңыз.',
+    sumNoField: 'Талаа жок',
     days: () => 'күн'
   }
 };
@@ -1209,7 +1249,7 @@ const state = {
   customLayers: null,
   gridLayer: null, gridRenderer: null, gridCells: [], gridGen: 0, gridZoomOk: false,
   overlayOn: true,
-  zoneView: 'now', zoneLayer: null, lastResult: null,
+  zoneView: 'now', zoneLayer: null, lastResult: null, drawing: false,
   pointGen: 0,
   mapStatusKey: '', mapStatusBusy: false,
   climateCache: {}     // 40-летние ряды кэшируем, чтобы не пересчитывать при переключении
@@ -1347,6 +1387,117 @@ const Terrain = {
   }
 };
 
+/* =====================================================================
+   ТИПЫ ЗЕМЕЛЬ: ESA WorldCover 10 м (2021) — где пашня, а где дома и вода.
+   Карта лежит на AWS кусками по 3° × 3°; geotiff.js читает только нужное окно.
+   ===================================================================== */
+const LC = { crop: 40, built: 50, snow: 70, water: [80, 90, 95] };
+const lcGroup = v => (v === LC.crop ? 'crop' : v === LC.built ? 'built' : LC.water.includes(v) || v === LC.snow ? 'water' : v ? 'other' : null);
+const LC_COLOR = { crop: '#9CCC65', other: '#BCAAA4', built: '#E57373', water: '#64B5F6' };
+
+const LandCover = {
+  files: new Map(),
+  available: null,   // false — карта не загрузилась (например, сайт открыт без нашего nginx)
+  tileName(la, lo) {
+    return `ESA_WorldCover_10m_2021_v200_${la >= 0 ? 'N' : 'S'}${pad(Math.abs(la))}${lo >= 0 ? 'E' : 'W'}${String(Math.abs(lo)).padStart(3, '0')}_Map.tif`;
+  },
+  file(la, lo) {
+    const name = this.tileName(la, lo);
+    if (!this.files.has(name)) {
+      this.files.set(name, GeoTIFF.fromUrl(CONFIG.landcover.url + name).catch(e => { this.files.delete(name); throw e; }));
+    }
+    return this.files.get(name);
+  },
+  // Классы на сетке cols × rows в прямоугольнике [запад, юг, восток, север]; строка 0 — север
+  async grid([w, s, e, n], cols, rows) {
+    if (typeof GeoTIFF === 'undefined' || location.protocol === 'file:') { this.available = false; return null; }
+    const out = new Uint8Array(cols * rows);
+    const cw = (e - w) / cols, rh = (n - s) / rows;
+    const tiles = [];
+    for (let la = Math.floor(s / 3) * 3; la < n; la += 3) for (let lo = Math.floor(w / 3) * 3; lo < e; lo += 3) tiles.push([la, lo]);
+    try {
+      await Promise.all(tiles.map(async ([la, lo]) => {
+        const c0 = clamp(Math.round((lo - w) / cw), 0, cols), c1 = clamp(Math.round((lo + 3 - w) / cw), 0, cols);
+        const r0 = clamp(Math.round((n - la - 3) / rh), 0, rows), r1 = clamp(Math.round((n - la) / rh), 0, rows);
+        if (c1 <= c0 || r1 <= r0) return;
+        const tiff = await this.file(la, lo);
+        const [band] = await tiff.readRasters({
+          bbox: [w + c0 * cw, n - r1 * rh, w + c1 * cw, n - r0 * rh], width: c1 - c0, height: r1 - r0, resampleMethod: 'nearest'
+        });
+        for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) out[r * cols + c] = band[(r - r0) * (c1 - c0) + (c - c0)];
+      }));
+      this.available = true;
+      return out;
+    } catch (err) {
+      console.warn('ESA WorldCover недоступна:', err.message);
+      this.available = false;
+      return null;
+    }
+  }
+};
+
+// Доли групп земель в наборе классов
+function lcShares(values) {
+  const n = { crop: 0, other: 0, built: 0, water: 0 };
+  let total = 0;
+  for (const v of values) { const g = lcGroup(v); if (g) { n[g]++; total++; } }
+  if (!total) return null;
+  for (const k in n) n[k] /= total;
+  return n;
+}
+
+/* ---------- Геометрия полей ---------- */
+// Точка внутри многоугольника [[lat, lon], ...] (трассировка луча)
+function insidePoly(lat, lon, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [yi, xi] = poly[i], [yj, xj] = poly[j];
+    if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const polyBounds = poly => {
+  const lats = poly.map(p => p[0]), lons = poly.map(p => p[1]);
+  return { w: Math.min(...lons), e: Math.max(...lons), s: Math.min(...lats), n: Math.max(...lats) };
+};
+// Площадь (га) и центр тяжести многоугольника в локальной плоской проекции
+function polyArea(poly) {
+  const lat0 = poly.reduce((a, p) => a + p[0], 0) / poly.length;
+  const kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110540;
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][1] * kx, yi = poly[i][0] * ky, xj = poly[j][1] * kx, yj = poly[j][0] * ky;
+    const f = xj * yi - xi * yj;
+    a += f; cx += (xi + xj) * f; cy += (yi + yj) * f;
+  }
+  a /= 2;
+  return { ha: Math.abs(a) / 1e4, lat: cy / (6 * a) / ky, lon: cx / (6 * a) / kx };
+}
+
+/**
+ * Что внутри границ поля: доли пашни, построек, воды и классы для сетки участков 10 × 10.
+ * Читаем ~10 м на пиксель (как сама карта), но не больше 300 × 300.
+ */
+async function fieldLand(field) {
+  const b = polyBounds(field.outline);
+  const wm = (b.e - b.w) * 111320 * Math.cos(field.lat * Math.PI / 180), hm = (b.n - b.s) * 110540;
+  const k = Math.max(1, Math.min(30, Math.round(Math.max(wm, hm) / 10 / ZONES_N)));
+  const cols = ZONES_N * k, rows = ZONES_N * k;
+  const g = await LandCover.grid([b.w, b.s, b.e, b.n], cols, rows);
+  if (!g) return null;
+  const inside = [], zone = Array.from({ length: ZONES_N * ZONES_N }, () => []);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const lat = b.n - (r + 0.5) * (b.n - b.s) / rows, lon = b.w + (c + 0.5) * (b.e - b.w) / cols;
+    if (!insidePoly(lat, lon, field.outline)) continue;
+    const v = g[r * cols + c];
+    inside.push(v);
+    zone[Math.floor(r / k) * ZONES_N + Math.floor(c / k)].push(v);
+  }
+  const shares = lcShares(inside);
+  if (!shares) return null;
+  return { ...shares, zones: zone.map(z => { const sh = lcShares(z); return sh && sh.built + sh.water >= 0.5; }) };
+}
+
 // Плавный «шум» местности: одинаковый для одной точки, без резких скачков
 function smoothNoise(lat, lon) {
   return (Math.sin(lat * 41.3 + lon * 17.9) + Math.sin(lat * 13.1 - lon * 29.7 + 1.3)) / 2;
@@ -1412,8 +1563,9 @@ function suitability(cropId, env) {
   }
   return { score, cls, reason };
 }
-function suitText(s, env) {
+function suitText(s, env, land) {
   return t('reason' + s.reason, {
+    built: land ? Math.round((land.built + land.water) * 100) : '',
     elev: Math.round(env.elev), t: fmtNum(env.tmean, 1), slope: fmtNum(env.slope, 0), m: Math.round(env.moist * 100)
   });
 }
@@ -1459,16 +1611,16 @@ async function loadField(field) {
   return { climate, forecast, soil, ndvi };
 }
 
-// Участок 500 × 500 м вокруг выбранной точки
-function makeCustomField(lat, lon, elev, slope) {
+// Участок вокруг выбранной точки: по умолчанию квадрат 500 × 500 м, или границы, нарисованные фермером
+function makeCustomField(lat, lon, elev, slope, { outline = null, areaHa = null } = {}) {
   const env = regionEnv(lat, lon, elev, slope);
   const dLat = 250 / 110540, dLon = 250 / (111320 * Math.cos(lat * Math.PI / 180));
   const field = {
-    id: 'custom', custom: true, lat, lon,
-    elevation: Math.round(elev), slope, areaHa: 25,
+    id: 'custom', custom: true, drawn: !!outline, lat, lon,
+    elevation: Math.round(elev), slope, areaHa: areaHa ?? 25,
     tempOffset: env.tmean - CONFIG.model.baseT,
     seed: Math.abs(Math.round(lat * 1000) * 31 + Math.round(lon * 1000)) % 100000,
-    outline: [[lat + dLat, lon - dLon], [lat + dLat, lon + dLon], [lat - dLat, lon + dLon], [lat - dLat, lon - dLon]]
+    outline: outline || [[lat + dLat, lon - dLon], [lat + dLat, lon + dLon], [lat - dLat, lon + dLon], [lat - dLat, lon - dLon]]
   };
   field.mock = mockForPoint(field, env);
   return field;
@@ -1607,12 +1759,17 @@ function computeAll(field, data) {
   const pct = Math.round(data.soil.sm_rootzone_wetness * 100);
   const forecastDays = parseForecast(data.forecast);
   const days = computeRisks(forecastDays, pct);
-  const suit = suitability(state.cropId, env);
+  let suit = suitability(state.cropId, env);
+  // Дома и вода — не поле, какая бы ни была погода
+  const lc = field.land;
+  if (lc && lc.water >= 0.5) suit = { score: 0, cls: 'bad', reason: 'Water' };
+  else if (lc && lc.built + lc.water >= 0.5) suit = { score: 0, cls: 'bad', reason: 'Built' };
   const sow = computeSowing(data.climate, crop.sowTemp);
   // Если для культуры здесь слишком холодно, короткое летнее «окно» не выдаём за срок сева
   if (suit.reason === 'ColdBad') sow.tooCold = true;
   return {
     crop, env, pct, days, suit, sow,
+    notField: suit.reason === 'Built' || suit.reason === 'Water',
     advice: soilAdvice(pct, forecastDays),
     warns: buildWarnings(days),
     best: bestCrops(env),
@@ -1648,19 +1805,26 @@ function computeZones(field, data, pct) {
     r: 0.9 + (1 - now) * 2.2 + rnd() * 0.8,
     drop: 0.12 + (1 - now) * 0.2 + rnd() * 0.05
   });
+  // Сетка 10 × 10 по прямоугольнику вокруг поля; считаются только участки внутри границ
+  // и не занятые постройками (по ESA WorldCover)
+  const b = polyBounds(field.outline);
   const cells = [];
   for (let y = 0; y < ZONES_N; y++) for (let x = 0; x < ZONES_N; x++) {
     const n = (rnd() - 0.5) * 0.06;
     const hit = patches.reduce((sum, p) => sum + p.drop * Math.exp(-(((x - p.x) ** 2 + (y - p.y) ** 2) / (p.r * p.r))), 0);
+    const lat = b.n - (y + 0.5) * (b.n - b.s) / ZONES_N, lon = b.w + (x + 0.5) * (b.e - b.w) / ZONES_N;
+    const inside = insidePoly(lat, lon, field.outline);
+    const built = inside && !!field.land?.zones[y * ZONES_N + x];
     cells.push({
-      x, y,
+      x, y, inside, built,
       before: clamp(prev + n, 0.02, 0.95),
       now: clamp(now + 0.03 + n - hit, 0.02, 0.95),
-      damaged: hit >= 0.1
+      damaged: inside && !built && hit >= 0.1
     });
   }
+  const active = cells.filter(c => c.inside && !c.built);
   const bad = cells.filter(c => c.damaged);
-  const share = bad.length / cells.length;
+  const share = active.length ? bad.length / active.length : 0;
   let part = null;
   if (bad.length) {
     // Где очаг: центр масс повреждённых участков относительно центра поля (y = 0 — север)
@@ -1709,7 +1873,9 @@ function renderStatic() {
   renderFieldSelect();
 
   $('mapLegend').innerHTML = ['good', 'mid', 'bad']
-    .map(c => `<span><i style="background:${SUIT_COLOR[c]};opacity:${c === 'bad' ? .55 : .85}"></i>${suitLabel(c)}</span>`).join('');
+    .map(c => `<span><i style="background:${SUIT_COLOR[c]};opacity:${c === 'bad' ? .55 : .85}"></i>${suitLabel(c)}</span>`).join('') +
+    `<span><i style="background:transparent;border:1.5px dashed #90A4AE"></i>${t('legendNone')}</span>`;
+  renderDrawBtn();
   renderLegend();
   renderMissions();
   renderNdviDemo();
@@ -1742,21 +1908,39 @@ function renderPoint(field, r) {
       <span class="badge ${SUIT_TONE[s.cls]}">${suitLabel(s.cls)}</span>
     </div>
     <div class="suit-bar"><i style="width:${Math.max(3, s.score * 100)}%;background:${SUIT_COLOR[s.cls]}"></i></div>
-    <p class="suit-reason">${suitText(s, r.env)}</p>`;
+    <p class="suit-reason">${suitText(s, r.env, field.land)}</p>`;
+  renderLand(field);
+  $('bestCrops').parentElement.hidden = r.notField;
   $('bestCrops').innerHTML = r.best.map(b => `
     <button type="button" data-crop="${b.id}" aria-pressed="${b.id === state.cropId}">
       <i style="background:${SUIT_COLOR[b.s.cls]}"></i>${cropName(b.id)} <small>${Math.round(b.s.score * 100)}%</small>
     </button>`).join('');
   $('fieldInfo').innerHTML = `
-    <div><dt>${t('area')}</dt><dd>${field.custom ? t('customArea') : field.areaHa + ' ' + t('areaUnit')}</dd></div>
+    <div><dt>${t('area')}</dt><dd>${field.drawn ? t('drawnArea', { ha: fmtNum(field.areaHa, field.areaHa < 10 ? 1 : 0) }) : field.custom ? t('customArea') : field.areaHa + ' ' + t('areaUnit')}</dd></div>
     <div><dt>${t('coords')}</dt><dd>${field.lat.toFixed(3)}, ${field.lon.toFixed(3)}</dd></div>
     <div><dt>${t('elevation')}</dt><dd>${field.elevation} ${t('elevUnit')}</dd></div>
     <div><dt>${t('slope')}</dt><dd>${fmtNum(field.slope, 1)}°</dd></div>`;
 }
 
+function renderLand(field) {
+  const box = $('landBox');
+  const lc = field.land;
+  if (lc === undefined) { box.innerHTML = `<div class="land-title">${t('landLoading')}</div>`; return; }
+  if (!lc) { box.innerHTML = ''; return; }
+  const parts = ['crop', 'other', 'built', 'water'].filter(k => lc[k] >= 0.005);
+  box.innerHTML = `
+    <div class="land-title">${t('landTitle')}</div>
+    <div class="land-bar">${parts.map(k => `<i style="width:${lc[k] * 100}%;background:${LC_COLOR[k]}"></i>`).join('')}</div>
+    <div class="land-items">${parts.map(k => `<span><i style="background:${LC_COLOR[k]}"></i>${t('lc' + capitalize(k))} ${Math.round(lc[k] * 100)} %</span>`).join('')}</div>
+    ${lc.built >= 0.1 && lc.built + lc.water < 0.5 ? `<div class="land-warn">⚠️ ${t('landWarn', { built: Math.round(lc.built * 100) })}</div>` : ''}
+    ${field.drawn ? `<div class="top-hint">✏️ ${t('drawEdit')}</div>` : ''}`;
+}
+
 function renderSummary(r) {
   const cropN = r.crop.name[state.lang];
-  const sowTile = r.sow.tooCold
+  const sowTile = r.notField
+    ? { cls: 'bad', value: t('sumNoField'), sub: t('notField') }
+    : r.sow.tooCold
     ? { cls: 'frost', value: t('sumTooCold'), sub: t('sumTooColdSub') }
     : { cls: 'good', value: `${doyToDM(r.sow.from)} — ${doyToDM(r.sow.to)}`, sub: t('sumSowSub', { temp: r.sow.threshold }) };
   const w = r.warns[0];
@@ -1765,14 +1949,14 @@ function renderSummary(r) {
   const z = r.zones;
   const tiles = [
     { href: '#nasa-srtm', icon: '📍', label: t('sumSuit', { crop: cropN }), cls: r.suit.cls,
-      value: `${Math.round(r.suit.score * 100)} % · ${suitLabel(r.suit.cls)}`, sub: suitText(r.suit, r.env) },
+      value: `${Math.round(r.suit.score * 100)} % · ${suitLabel(r.suit.cls)}`, sub: suitText(r.suit, r.env, fieldById(state.fieldId).land) },
     { href: '#sowCard', icon: r.crop.perennial ? '🌳' : '🌱', label: t(r.crop.perennial ? 'sumPlant' : 'sumSow'), ...sowTile },
     { href: '#weekCard', icon: w.icon, label: t('sumRisk'), cls: riskCls, value: w.label + more, sub: w.sub },
     { href: '#nasa-smap', icon: '💧', label: t('sumWater'), cls: r.advice.cls,
       value: capitalize(waterShort(r.advice)), sub: t('sumWaterSub', { pct: r.pct }) },
-    { href: '#zonesCard', icon: '🔍', label: t('zonesTitle').replace('🔍 ', ''), cls: z.cells.some(c => c.damaged) ? 'bad' : 'good',
+    { href: '#zonesCard', icon: '🔍', label: t('zonesTitle').replace('🔍 ', ''), cls: r.notField ? 'bad' : z.cells.some(c => c.damaged) ? 'bad' : 'good',
       value: z.cells.some(c => c.damaged) ? `${zonesPct(z)} % · ≈ ${fmtNum(z.ha, z.ha < 10 ? 1 : 0)} ${t('areaUnit')}` : '0 %',
-      sub: z.cells.some(c => c.damaged) ? capitalize(zonesWhere(z)) : t('zonesNone') }
+      sub: r.notField ? t('notField') : z.cells.some(c => c.damaged) ? capitalize(zonesWhere(z)) : t('zonesNone') }
   ];
   $('summaryGrid').innerHTML = tiles.map(x => `
     <a class="tile ${x.cls}" href="${x.href}">
@@ -1786,6 +1970,7 @@ function renderSummary(r) {
 const waterShort = advice => t('w_' + (advice.rain ? 'soilWaitRain' : advice.key));
 
 function smsText(field, r) {
+  if (r.notField) return t('smsNotField', { place: placeName(field) });
   const L = I18N[state.lang];
   const s = r.sow;
   const w = r.warns[0];
@@ -1829,6 +2014,7 @@ function renderChannels(field, r) {
     ...(r.zones.cells.some(c => c.damaged) ? [`🔍 ${t('tgZones', { pct: zonesPct(r.zones), where: zonesWhere(r.zones) })}`] : []),
     ...(alt.length ? [`🌾 ${t('tgBest', { list: alt.join(', ') })}`] : [])
   ];
+  if (r.notField) lines.splice(1, lines.length - 1, `🏠 ${t('notField')}`);
   $('tgChat').innerHTML = `
     <div class="bubble me">📍 ${esc(place)}<span class="time">07:59 ✓✓</span></div>
     <div class="bubble bot">${lines.map(l => `<div class="line">${l}</div>`).join('')}<span class="time">08:00</span></div>
@@ -1844,7 +2030,10 @@ function renderSowing(r, animate) {
   $('sowTitle').textContent = t(r.crop.perennial ? 'sowTitlePlant' : 'sowTitleSeed');
 
   // Текстовый вывод: сначала окно сева, потом как сдвинулся сезон
-  if (s.tooCold) {
+  if (r.notField) {
+    $('sowSummary').className = 'sow-summary cold';
+    $('sowSummary').innerHTML = `<div>🏠 ${t('notField')}</div>`;
+  } else if (s.tooCold) {
     $('sowSummary').className = 'sow-summary cold';
     $('sowSummary').innerHTML = `<div>${t('sowTooCold', { temp: s.threshold, crop: cropN })}</div>`;
   } else {
@@ -1931,42 +2120,47 @@ function renderForecast(r) {
   ).join('');
 }
 
+const zoneFill = c => (c.built ? '#CFD8DC' : state.zoneView === 'now' ? ndviColor(c.now) : changeColor(c.now - c.before));
+
 function renderZones(field, r) {
   const z = r.zones;
   const view = state.zoneView;
-  const g = 100 / ZONES_N;
-  $('zonesSvg').innerHTML = z.cells.map(c => {
-    const fill = view === 'now' ? ndviColor(c.now) : changeColor(c.now - c.before);
-    const stroke = view === 'now' && c.damaged ? ' stroke="#B71C1C" stroke-width="1.4"' : '';
-    return `<rect x="${c.x * g + 0.4}" y="${c.y * g + 0.4}" width="${g - 0.8}" height="${g - 0.8}" rx="1.2" fill="${fill}"${stroke}/>`;
-  }).join('');
+  // Схема поля в своих пропорциях: длинная сторона — 100 единиц
+  const b = polyBounds(field.outline);
+  const wm = (b.e - b.w) * Math.cos(field.lat * Math.PI / 180), hm = b.n - b.s;
+  const k = 96 / Math.max(wm, hm);
+  const W = wm * k, H = hm * k, ox = (100 - W) / 2, oy = (100 - H) / 2;
+  const gx = W / ZONES_N, gy = H / ZONES_N;
+  const toXY = ([la, lo]) => `${(ox + (lo - b.w) * Math.cos(field.lat * Math.PI / 180) * k).toFixed(2)},${(oy + (b.n - la) * k).toFixed(2)}`;
+  $('zonesSvg').innerHTML = z.cells.filter(c => c.inside).map(c => {
+    const stroke = view === 'now' && c.damaged ? ' stroke="#B71C1C" stroke-width="1.2"' : '';
+    return `<rect x="${(ox + c.x * gx + 0.3).toFixed(2)}" y="${(oy + c.y * gy + 0.3).toFixed(2)}" width="${(gx - 0.6).toFixed(2)}" height="${(gy - 0.6).toFixed(2)}" rx="0.8" fill="${zoneFill(c)}"${stroke}/>`;
+  }).join('') + `<polygon points="${field.outline.map(toXY).join(' ')}" fill="none" stroke="#263238" stroke-width="0.8" stroke-dasharray="2 1.5"/>`;
   document.querySelectorAll('[data-zview]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.zview === view)));
 
-  const found = z.cells.some(c => c.damaged);
+  const found = !r.notField && z.cells.some(c => c.damaged);
   $('zonesResult').className = 'zones-result ' + (found ? 'found' : 'clean');
-  $('zonesResult').innerHTML = found
+  $('zonesResult').innerHTML = r.notField ? `<p>🏠 ${t('notField')}</p>` : found
     ? `<p>${t('zonesFound', { pct: zonesPct(z), ha: fmtNum(z.ha, z.ha < 10 ? 1 : 0), where: zonesWhere(z) })}</p><p>${t('zoneCause' + z.cause, { soil: z.soil })}</p>`
     : `<p>${t('zonesNone')}</p>`;
   $('zonesLegend').innerHTML = view === 'now'
-    ? `<span>${t('zonesWeak')}</span><span class="ramp"></span><span>${t('zonesStrong')}</span><span class="dmg"></span><span>${t('zonesDamaged')}</span>`
+    ? `<span>${t('zonesWeak')}</span><span class="ramp"></span><span>${t('zonesStrong')}</span><span class="dmg"></span><span>${t('zonesDamaged')}</span>` +
+      (z.cells.some(c => c.built) ? `<span style="display:inline-flex;gap:6px;align-items:center"><i style="width:12px;height:12px;border-radius:3px;background:#CFD8DC"></i>${t('zonesBuilt')}</span>` : '')
     : [['#D32F2F', 'zonesWorse'], ['#E0E4DD', 'zonesSame'], ['#66BB6A', 'zonesBetter']]
         .map(([c, k]) => `<span style="display:inline-flex;gap:6px;align-items:center"><i style="width:12px;height:12px;border-radius:3px;background:${c}"></i>${t(k)}</span>`).join('');
   if (state.zoneLayer) drawZonesOnMap(field, r);
 }
 
-// Те же участки — поверх поля на карте. Контур поля — четырёхугольник (СЗ, СВ, ЮВ, ЮЗ),
-// поэтому сетку натягиваем на него билинейно: участки повторяют форму поля
+// Те же участки — поверх поля на карте, как пиксели снимка внутри границ
 function drawZonesOnMap(field, r) {
   if (!state.map) return;
   clearZonesOnMap();
-  const [tl, tr, br, bl] = field.outline;
-  const at = (u, v) => [0, 1].map(k => (1 - v) * ((1 - u) * tl[k] + u * tr[k]) + v * ((1 - u) * bl[k] + u * br[k]));
-  const N = ZONES_N;
-  state.zoneLayer = L.layerGroup(r.zones.cells.map(c => {
-    const fill = state.zoneView === 'now' ? ndviColor(c.now) : changeColor(c.now - c.before);
-    const corners = [at(c.x / N, c.y / N), at((c.x + 1) / N, c.y / N), at((c.x + 1) / N, (c.y + 1) / N), at(c.x / N, (c.y + 1) / N)];
-    return L.polygon(corners, {
-      color: '#B71C1C', weight: c.damaged && state.zoneView === 'now' ? 2 : 0, fillColor: fill, fillOpacity: .75, interactive: false
+  const b = polyBounds(field.outline);
+  const dLat = (b.n - b.s) / ZONES_N, dLon = (b.e - b.w) / ZONES_N;
+  state.zoneLayer = L.layerGroup(r.zones.cells.filter(c => c.inside).map(c => {
+    const north = b.n - c.y * dLat, west = b.w + c.x * dLon;
+    return L.rectangle([[north - dLat, west], [north, west + dLon]], {
+      color: '#B71C1C', weight: c.damaged && state.zoneView === 'now' ? 2 : 0, fillColor: zoneFill(c), fillOpacity: .78, interactive: false
     });
   })).addTo(state.map);
   return L.latLngBounds(field.outline);
@@ -2055,6 +2249,13 @@ function initMap() {
     maxZoom: 19, attribution: 'Снимки &copy; Esri, Maxar, Earthstar Geographics'
   });
 
+  // Подписи сёл и дорог поверх снимка
+  map.createPane('labels').style.zIndex = 450;
+  map.getPane('labels').style.pointerEvents = 'none';
+  state.labelLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, pane: 'labels'
+  });
+
   // Слой пригодности — над подложкой, под контурами полей
   map.createPane('suit').style.zIndex = 390;
   state.gridRenderer = L.canvas({ pane: 'suit', padding: 0.2 });
@@ -2070,8 +2271,15 @@ function initMap() {
     state.fieldLayers[f.id] = { poly, pin };
   });
 
-  // Клик по любому месту карты — разбираем эту точку
-  map.on('click', e => { const p = e.latlng.wrap(); selectPoint(p.lat, p.lng); });
+  // Клик по любому месту карты — разбираем эту точку (кроме режима рисования границ)
+  map.on('click', e => {
+    // Клик, которым замкнули контур, не должен тут же выбрать точку
+    if (state.drawing || Date.now() < (state.drawGuard || 0)) return;
+    const p = e.latlng.wrap();
+    selectPoint(p.lat, p.lng);
+  });
+  initDrawing(map);
+  setSatellite(true);
 
   let timer = null;
   const later = () => { clearTimeout(timer); timer = setTimeout(refreshGrid, 300); };
@@ -2081,9 +2289,38 @@ function initMap() {
   refreshGrid();
 }
 
+// Первый экран: настоящий снимок поля у Кемина с участками, где растения ослабли
+function initHeroShot() {
+  if (typeof L === 'undefined') return;
+  const field = CONFIG.fields.find(f => f.id === CONFIG.heroField);
+  const map = L.map('heroMap', {
+    zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+    boxZoom: false, keyboard: false, touchZoom: false, attributionControl: true, zoomSnap: 0.25
+  });
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, attribution: 'Esri, Maxar'
+  }).addTo(map);
+  map.attributionControl.setPrefix(false);
+  const bounds = L.latLngBounds(field.outline);
+  // Снизу справа лежит SMS — оставляем под ним место, чтобы поле было видно целиком
+  map.fitBounds(bounds, { paddingTopLeft: [40, 80], paddingBottomRight: [40, 170] });
+  const z = computeZones(field, { ndvi: CONFIG.mocks[field.id].ndvi }, Math.round(CONFIG.mocks[field.id].soil.sm_rootzone_wetness * 100));
+  const b = polyBounds(field.outline);
+  const dLat = (b.n - b.s) / ZONES_N, dLon = (b.e - b.w) / ZONES_N;
+  z.cells.filter(c => c.inside).forEach(c => {
+    const north = b.n - c.y * dLat, west = b.w + c.x * dLon;
+    L.rectangle([[north - dLat, west], [north, west + dLon]], {
+      color: '#B71C1C', weight: c.damaged ? 1.5 : 0, fillColor: ndviColor(c.now), fillOpacity: .62, interactive: false
+    }).addTo(map);
+  });
+  L.polygon(field.outline, { color: '#FFD54F', weight: 3, fill: false, interactive: false }).addTo(map);
+}
+
 function setSatellite(on) {
   if (!state.map) return;
-  if (on) state.satLayer.addTo(state.map); else state.satLayer.remove();
+  if (on) { state.satLayer.addTo(state.map); state.labelLayer.addTo(state.map); }
+  else { state.satLayer.remove(); state.labelLayer.remove(); }
+  if (state.satOn !== on) { state.satOn = on; paintGrid(); }
   $('satToggle').setAttribute('aria-pressed', String(on));
 }
 
@@ -2094,10 +2331,12 @@ function setMapStatus(key, busy = false) {
 }
 function renderMapStatus() {
   const el = $('mapStatus');
-  let key = state.mapStatusKey;
+  // Пока рисуют границы — подсказка важнее остальных сообщений
+  let key = state.drawing ? 'drawHint' : state.mapStatusKey;
   if (!key && Terrain.live === false) key = 'statusOffline';
+  if (!key && LandCover.available === false) key = 'statusNoLand';
   el.textContent = key ? t(key) : '';
-  el.classList.toggle('busy', state.mapStatusBusy);
+  el.classList.toggle('busy', state.mapStatusBusy && !state.drawing);
 }
 
 /* ---------- Сетка пригодности по видимой области ---------- */
@@ -2162,7 +2401,22 @@ async function refreshGrid() {
   state.gridStep = step;
   setMapStatus('');
   paintGrid();
+
+  // Типы земель для каждой ячейки (3 × 3 пикселя на ячейку): дома и воду не закрашиваем
+  const K = 3, cols = j1 - j0, nrows = i1 - i0;
+  const lc = await LandCover.grid([j0 * step, i0 * dLat, j1 * step, i1 * dLat], cols * K, nrows * K);
+  if (gen !== state.gridGen) return;
+  if (lc) {
+    rows.forEach((row, i) => row.forEach((c, j) => {
+      const r0 = (nrows - 1 - i) * K, vals = [];   // строки сетки идут с юга, строки снимка — с севера
+      for (let dr = 0; dr < K; dr++) for (let dc = 0; dc < K; dc++) vals.push(lc[(r0 + dr) * cols * K + j * K + dc]);
+      c.lc = lcShares(vals);
+    }));
+    paintGrid();
+  }
+  renderMapStatus();
 }
+const cellExcluded = c => c.lc && c.lc.built + c.lc.water >= 0.5;
 
 function paintGrid() {
   if (!state.gridLayer) return;
@@ -2170,9 +2424,12 @@ function paintGrid() {
   state.gridCells.forEach(c => { c.s = suitability(state.cropId, c.env); });
   if (state.overlayOn) {
     state.gridCells.forEach(c => {
+      if (cellExcluded(c)) return;
+      // Пашня — ярко; пастбища и кусты — бледнее: там пахать ещё придётся
+      const k = c.lc && c.lc.crop < 0.5 ? 0.45 : 1;
       L.rectangle(c.bounds, {
         renderer: state.gridRenderer, pane: 'suit', stroke: false,
-        fillColor: SUIT_COLOR[c.s.cls], fillOpacity: SUIT_FILL[c.s.cls]
+        fillColor: SUIT_COLOR[c.s.cls], fillOpacity: SUIT_FILL[c.s.cls] * k * (state.satOn ? 0.7 : 1)
       })
         .bindTooltip(() => `<b>${Math.round(c.s.score * 100)} % · ${suitLabel(c.s.cls)}</b><br>${Math.round(c.elev)} ${t('elevUnit')} · ${fmtNum(c.slope, 0)}°<br>${suitText(c.s, c.env)}`,
           { sticky: true, direction: 'top', opacity: .95 })
@@ -2197,8 +2454,8 @@ function renderTopPlaces() {
   // При равной оценке (с шагом 5 %) выше то, что ближе к центру карты
   const rank = c => Math.round(c.s.score * 20);
   const sorted = state.gridCells
-    .filter(c => c.s.cls !== 'bad' && view.contains([c.lat, c.lon]))
-    .sort((a, b) => rank(b) - rank(a) || km(a).dist - km(b).dist);
+    .filter(c => c.s.cls !== 'bad' && !cellExcluded(c) && view.contains([c.lat, c.lon]))
+    .sort((a, b) => rank(b) - rank(a) || (b.lc?.crop ?? 0) - (a.lc?.crop ?? 0) || km(a).dist - km(b).dist);
   const picked = [];
   const minGap = state.gridStep * 3;
   for (const c of sorted) {
@@ -2245,9 +2502,17 @@ function drawCustomField(field) {
   if (state.customLayers) { state.customLayers.poly.remove(); state.customLayers.marker.remove(); }
   const poly = L.polygon(field.outline, { bubblingMouseEvents: false }).addTo(state.map)
     .on('click', () => selectField('custom'));
+  // Нарисованные границы можно поправить: тянуть углы, добавлять точки на сторонах
+  if (field.drawn && poly.pm) {
+    poly.pm.enable({ allowSelfIntersection: false, draggable: false });
+    poly.on('pm:edit', () => {
+      const ring = poly.getLatLngs()[0].map(p => [p.lat, p.lng]);
+      selectPolygon(ring, { keepPlace: true });
+    });
+  }
   const marker = L.marker([field.lat, field.lon], {
     icon: L.divIcon({ className: '', html: '<span class="pin-dot"></span>', iconSize: [20, 20], iconAnchor: [10, 10] }),
-    keyboard: false
+    keyboard: false, interactive: !field.drawn
   }).addTo(state.map).on('click', () => selectField('custom'));
   state.customLayers = { poly, marker };
 }
@@ -2275,10 +2540,16 @@ async function selectField(id, { fly = true } = {}) {
   state.data = await loadField(field);
   if (state.fieldId !== id) return;
   renderAll(true);
+  // Что внутри границ: пашня, дома, вода — подгружаем отдельно и пересчитываем
+  if (field.land === undefined) {
+    const land = await fieldLand(field);
+    field.land = land;
+    if (state.fieldId === id && fieldById(id) === field) { renderAll(false); renderMapStatus(); }
+  }
 }
 
 // Разбор произвольной точки: высота и уклон по 5 точкам вокруг, затем все блоки
-async function selectPoint(lat, lon, { fly = false, name = null } = {}) {
+async function selectPoint(lat, lon, { fly = false, name = null, shape = null } = {}) {
   const gen = ++state.pointGen;
   $('pointCard').classList.add('loading');
   if (fly && state.map) {
@@ -2290,7 +2561,7 @@ async function selectPoint(lat, lon, { fly = false, name = null } = {}) {
   if (gen !== state.pointGen) return;
   const dy = 2 * d * 110540, dx = 2 * d * 111320 * Math.cos(lat * Math.PI / 180);
   const slope = Math.atan(Math.hypot((e[1] - e[2]) / dy, (e[3] - e[4]) / dx)) * 180 / Math.PI;
-  const field = makeCustomField(lat, lon, e[0], slope);
+  const field = makeCustomField(lat, lon, e[0], slope, shape || {});
   field.place = name;
   state.customField = field;
   drawCustomField(field);
@@ -2306,6 +2577,14 @@ async function selectPoint(lat, lon, { fly = false, name = null } = {}) {
       if (state.fieldId === 'custom') renderAll(false);
     }
   }
+}
+
+// Поле по границам, нарисованным на карте
+async function selectPolygon(ring, { keepPlace = false } = {}) {
+  if (ring.length < 3) return;
+  const { ha, lat, lon } = polyArea(ring);
+  const name = keepPlace && state.customField ? state.customField.place : null;
+  await selectPoint(lat, lon, { name, shape: { outline: ring, areaHa: ha } });
 }
 
 async function reverseName(lat, lon) {
@@ -2329,6 +2608,53 @@ function renderAll(animate) {
   renderForecast(r);
   styleFields(r);
   if (animate) { flash($('suitBox')); flash($('summaryGrid')); flash($('tgChat')); flash($('smsText')); }
+}
+
+/* ---------- Рисование границ поля (Leaflet-Geoman) ---------- */
+function initDrawing(map) {
+  if (!map.pm) { $('drawBtn').hidden = true; return; }
+  map.pm.setLang('ru');
+  map.pm.setGlobalOptions({
+    allowSelfIntersection: false, snappable: true, snapDistance: 15,
+    templineStyle: { color: '#FFD54F', weight: 3 }, hintlineStyle: { color: '#FFD54F', dashArray: '6 6' },
+    pathOptions: { color: '#FFD54F', weight: 3, fillOpacity: .15 }
+  });
+  map.on('pm:create', e => {
+    const ring = e.layer.getLatLngs()[0].map(p => [p.lat, p.lng]);
+    e.layer.remove();
+    stopDrawing();
+    selectPolygon(ring);
+  });
+  map.on('pm:drawend', () => { if (state.drawing) stopDrawing(); });
+}
+function startDrawing() {
+  if (!state.map || !state.map.pm) return;
+  state.drawing = true;
+  setSatellite(true);
+  $('sec-demo').querySelector('.map-card').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+  if (state.map.getZoom() < 14 && state.customField) state.map.setView([state.customField.lat, state.customField.lon], 15);
+  else if (state.map.getZoom() < 14) state.map.setZoom(14);
+  state.map.pm.enableDraw('Polygon', { finishOn: 'dblclick', continueDrawing: false });
+  state.map.doubleClickZoom.disable();
+  state.map.getPane('suit').style.pointerEvents = 'none';
+  setMapStatus('drawHint');
+  renderDrawBtn();
+}
+function stopDrawing() {
+  state.drawing = false;
+  state.drawGuard = Date.now() + 500;
+  if (state.map && state.map.pm) {
+    state.map.pm.disableDraw();
+    // Двойной клик, которым закончили контур, не должен ещё и приблизить карту
+    setTimeout(() => { if (!state.drawing) state.map.doubleClickZoom.enable(); }, 500);
+    state.map.getPane('suit').style.pointerEvents = '';
+  }
+  if (state.mapStatusKey === 'drawHint') setMapStatus('');
+  renderDrawBtn();
+}
+function renderDrawBtn() {
+  $('drawBtnText').textContent = t(state.drawing ? 'drawStop' : 'drawStart');
+  $('drawBtn').setAttribute('aria-pressed', String(!!state.drawing));
 }
 
 function setLang(lang) {
@@ -2407,6 +2733,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderStatic();
   initMap();
+  initHeroShot();
   initReveal();
   initSubnav();
 
@@ -2418,6 +2745,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (q) searchPlace(q);
   });
   $('locateBtn').addEventListener('click', locateMe);
+  $('drawBtn').addEventListener('click', () => (state.drawing ? stopDrawing() : startDrawing()));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.drawing) stopDrawing(); });
   $('satToggle').addEventListener('click', () => setSatellite($('satToggle').getAttribute('aria-pressed') !== 'true'));
   $('layerToggle').addEventListener('click', () => {
     state.overlayOn = !state.overlayOn;
@@ -2469,6 +2798,8 @@ const CONFIG = {
   },
   // Тайлы высот AWS Terrain Tiles (Terrarium, в основе NASA SRTM), бесплатно и без ключа
   elevation: { url: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png' },
+  // Типы земель ESA WorldCover 10 м: файлы с AWS, читаются через nginx этого же сайта (deploy/nginx.conf)
+  landcover: { url: '/worldcover/' },
   // Поиск сёл (OpenStreetMap Nominatim); viewbox — приоритет Центральной Азии
   search: { viewbox: '69,44,81,39' },
 
@@ -2518,6 +2849,7 @@ const CONFIG = {
   grid: { cols: 34, maxCells: 1400, minZoom: 8 },
 
   map: { center: [42.82, 74.95], zoom: 9, fieldZoom: 13, pointZoom: 12 },
+  heroField: 'kemin',   // поле на первом экране
 
   // Демо-поля в Чуйской области: контуры настоящих пашен, обведённые по спутниковому снимку Esri World Imagery
   fields: [
