@@ -2,7 +2,7 @@
  * Предупреждения: каждое утро в 7:00 по Бишкеку проверяем прогноз для подписанных фермеров
  * и пишем, только если есть что делать. Одно и то же предупреждение — не чаще раза в 3 дня.
  */
-import { analyze } from './agro.js';
+import { analyze, bishkekNow } from './agro.js';
 import { alertText } from './texts.js';
 import { allUsers, save } from './store.js';
 
@@ -10,7 +10,6 @@ const HOUR = Number(process.env.ALERT_HOUR ?? 7);
 const REPEAT_DAYS = 3;
 const SOW_NOTICE_DAYS = 3; // за сколько дней предупредить о начале окна сева
 
-const bishkekNow = () => new Date(Date.now() + 6 * 3600e3); // UTC+6, без перехода на летнее время
 const isoDay = d => d.toISOString().slice(0, 10);
 
 // Что стоит сообщить сейчас (без учёта того, что уже отправляли)

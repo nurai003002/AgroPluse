@@ -82,6 +82,22 @@ async function askPlace(ctx, user) {
   return ctx.reply(t(user.lang, 'sendPlace'), { reply_markup: locationKeyboard(user.lang) });
 }
 
+const needPlace = (ctx, user) => ctx.reply(t(user.lang, 'needPlace'), { reply_markup: locationKeyboard(user.lang) });
+
+// Пользователь чата; язык по умолчанию — русский (пока не выбрал сам)
+async function userOf(ctx) {
+  const user = await getUser(ctx.chat.id);
+  user.lang ||= 'ru';
+  return user;
+}
+
+// Предупреждения вкл/выкл — и командой /alerts, и кнопкой под советом
+async function toggleAlerts(ctx, user) {
+  user.alerts = !user.alerts;
+  await save();
+  return ctx.reply(t(user.lang, user.alerts ? 'alertsOn' : 'alertsOff'));
+}
+
 /* ---------- Команды ---------- */
 bot.command(['start', 'lang'], async ctx => {
   await ctx.reply(t('ru', 'chooseLang'), { reply_markup: langKeyboard() });
@@ -98,30 +114,23 @@ bot.callbackQuery(/^lang:(ru|ky)$/, async ctx => {
 });
 
 bot.command('help', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  return ctx.reply(t(user.lang || 'ru', 'help'));
+  const user = await userOf(ctx);
+  return ctx.reply(t(user.lang, 'help'));
 });
 
 bot.command('crop', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  user.lang ||= 'ru';
-  if (!user.place) return ctx.reply(t(user.lang, 'needPlace'), { reply_markup: locationKeyboard(user.lang) });
+  const user = await userOf(ctx);
+  if (!user.place) return needPlace(ctx, user);
   return sendCropMenu(ctx, user);
 });
 
-bot.command('alerts', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  user.lang ||= 'ru';
-  user.alerts = !user.alerts;
-  await save();
-  return ctx.reply(t(user.lang, user.alerts ? 'alertsOn' : 'alertsOff'));
-});
+bot.command('alerts', async ctx => toggleAlerts(ctx, await userOf(ctx)));
 
 // Проверить предупреждения прямо сейчас — удобно для показа на демо
 bot.command('check', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  user.lang ||= 'ru';
-  if (!user.place || !user.crop) return ctx.reply(t(user.lang, 'needPlace'), { reply_markup: locationKeyboard(user.lang) });
+  const user = await userOf(ctx);
+  if (!user.place) return needPlace(ctx, user);
+  if (!user.crop) return sendCropMenu(ctx, user);
   await ctx.replyWithChatAction('typing');
   try {
     const a = await analyze(user.place, user.crop);
@@ -136,8 +145,7 @@ bot.command('check', async ctx => {
 
 /* ---------- Место: геолокация или название ---------- */
 bot.on('message:location', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  user.lang ||= 'ru';
+  const user = await userOf(ctx);
   const { latitude: lat, longitude: lon } = ctx.message.location;
   await ctx.reply(t(user.lang, 'searching'));
   const name = (await reverseName(lat, lon, user.lang)) || `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
@@ -146,8 +154,7 @@ bot.on('message:location', async ctx => {
 
 bot.on('message:text', async ctx => {
   if (ctx.message.text.startsWith('/')) return;
-  const user = await getUser(ctx.chat.id);
-  user.lang ||= 'ru';
+  const user = await userOf(ctx);
   await ctx.reply(t(user.lang, 'searching'));
   let found = null;
   try { found = await geocode(ctx.message.text.trim(), user.lang); } catch (e) { console.error('geocode:', e.message); }
@@ -157,9 +164,8 @@ bot.on('message:text', async ctx => {
 
 /* ---------- Кнопки под советом ---------- */
 bot.callbackQuery(/^crop:(\w+)$/, async ctx => {
-  const user = await getUser(ctx.chat.id);
   if (!CROPS[ctx.match[1]]) return ctx.answerCallbackQuery();
-  user.lang ||= 'ru';
+  const user = await userOf(ctx);
   user.crop = ctx.match[1];
   await save();
   await ctx.answerCallbackQuery(cropName(user.crop, user.lang));
@@ -168,29 +174,27 @@ bot.callbackQuery(/^crop:(\w+)$/, async ctx => {
 });
 
 bot.callbackQuery('menu:place', async ctx => {
-  const user = await getUser(ctx.chat.id);
+  const user = await userOf(ctx);
   await ctx.answerCallbackQuery();
   return askPlace(ctx, user);
 });
 
 bot.callbackQuery('menu:crop', async ctx => {
-  const user = await getUser(ctx.chat.id);
+  const user = await userOf(ctx);
   await ctx.answerCallbackQuery();
   if (!user.place) return askPlace(ctx, user);
   return sendCropMenu(ctx, user);
 });
 
 bot.callbackQuery('alerts', async ctx => {
-  const user = await getUser(ctx.chat.id);
-  user.alerts = !user.alerts;
-  await save();
-  await ctx.answerCallbackQuery(t(user.lang, user.alerts ? 'btnAlertsOn' : 'btnAlertsOff'));
-  await ctx.editMessageReplyMarkup({ reply_markup: cardKeyboard(user) }).catch(() => {});
-  return ctx.reply(t(user.lang, user.alerts ? 'alertsOn' : 'alertsOff'));
+  const user = await userOf(ctx);
+  await ctx.answerCallbackQuery();
+  await toggleAlerts(ctx, user);
+  return ctx.editMessageReplyMarkup({ reply_markup: cardKeyboard(user) }).catch(() => {});
 });
 
 bot.callbackQuery('refresh', async ctx => {
-  const user = await getUser(ctx.chat.id);
+  const user = await userOf(ctx);
   await ctx.answerCallbackQuery();
   if (!user.place || !user.crop) return askPlace(ctx, user);
   return sendCard(ctx, user, { edit: true });

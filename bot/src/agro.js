@@ -10,6 +10,8 @@ import * as src from './sources.js';
 const LAPSE_K = 0.003;
 const FILL = -999;
 
+// Кыргызстан живёт по UTC+6 круглый год, без перехода на летнее время
+export const bishkekNow = (now = new Date()) => new Date(now.getTime() + 6 * 3600e3);
 const pad = n => String(n).padStart(2, '0');
 const keyOf = d => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
 export const doyToDM = doy => { const d = new Date(Date.UTC(2025, 0, Math.round(doy))); return pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1); };
@@ -162,7 +164,7 @@ export async function analyze(place, cropId, today = new Date()) {
   const climate = climateFromPower(power, ter.elev);
   const env = { elev: ter.elev, slope: ter.slope, tmean: climate.tmean, rain: climate.rainYear };
   const soil = recent ? soilState(recent, climate) : null;
-  const local = new Date(today.getTime() + 6 * 3600e3).toISOString(); // дата по Бишкеку
+  const local = bishkekNow(today).toISOString();
   const month = +local.slice(5, 7), day = +local.slice(8, 10);
   const suit = suitability(cropId, env);
   const sow = sowing(climate, cropId, today);
