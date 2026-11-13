@@ -22,6 +22,14 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  api:
+    build: ./api
+    container_name: agropulse-api
+    restart: unless-stopped
+    volumes:
+      - api-data:/app/data
+    logging: *logging
+
   bot:
     build: ./bot
     container_name: agropulse-bot
@@ -35,3 +43,4 @@ services:
 
 volumes:
   bot-data:
+  api-data:

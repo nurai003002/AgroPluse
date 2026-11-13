@@ -474,6 +474,67 @@
   footer { padding: 32px 0 40px; font-size: 13px; color: var(--muted); text-align: center; }
 
   /* ===== Адаптивность ===== */
+  /* Своя культура */
+  .own-quiz[hidden], .save-row[hidden] { display: none; }
+  .own-crop { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .own-quiz { margin-top: 10px; display: grid; gap: 10px; background: var(--bg); border-radius: 14px; padding: 12px; }
+  .own-quiz-title { font-weight: 700; font-size: 14px; }
+  .own-q { display: grid; gap: 6px; }
+  .own-q > span { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips label { position: relative; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips label span {
+    display: inline-block; font-size: 13px; font-weight: 600; padding: 6px 11px; border-radius: 999px; cursor: pointer;
+    background: #fff; border: 1.5px solid var(--line); transition: border-color .2s, background .2s;
+  }
+  .chips input:checked + span { border-color: var(--green); background: var(--green-50); }
+  .chips input:focus-visible + span { box-shadow: 0 0 0 3px rgba(46, 125, 50, .2); }
+  .own-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .save-row { margin-top: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .save-row .form-msg { margin-top: 0; }
+
+  /* Вход и личный кабинет */
+  .top-actions { display: flex; align-items: center; gap: 8px; }
+  .account-btn {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 180px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    background: #fff; color: var(--green-dark); border: 1.5px solid var(--line); border-radius: 999px; padding: 7px 14px;
+  }
+  .account-btn:hover { border-color: var(--green); }
+  .account-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  dialog.dlg {
+    border: 0; border-radius: var(--radius); padding: 0; width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+    box-shadow: 0 24px 60px rgba(20, 40, 25, .25); color: var(--text); background: var(--card);
+  }
+  dialog.dlg.wide { width: min(640px, calc(100vw - 32px)); }
+  dialog.dlg::backdrop { background: rgba(20, 30, 24, .45); }
+  .dlg-body { padding: 22px; display: grid; gap: 14px; }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .dlg-head h2 { font-size: 22px; }
+  .dlg-close { border: 0; background: var(--bg); width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; flex: none; color: var(--muted); }
+  .dlg-close:hover { color: var(--text); }
+  .dlg .seg { margin-top: 0; }
+  .dlg input[type=text], .dlg input[type=password], .dlg input[type=tel] {
+    width: 100%; font: inherit; font-size: 16px; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: #fff; color: var(--text);
+  }
+  .dlg input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(46, 125, 50, .15); }
+  .auth-form { display: grid; gap: 12px; }
+  .auth-note { font-size: 14px; background: var(--green-50); color: var(--green-dark); border-radius: 12px; padding: 10px 12px; }
+  .auth-note:empty { display: none; }
+  .cab-user { color: var(--muted); font-size: 14px; }
+  .cab-sec h3 { font-size: 17px; margin-bottom: 8px; }
+  .cab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .cab-item { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+  .cab-item input[type=text] { border-color: transparent; padding: 4px 8px; margin-left: -8px; font-weight: 700; font-size: 15px; }
+  .cab-item input[type=text]:hover { border-color: var(--line); }
+  .cab-meta { font-size: 13px; color: var(--muted); grid-column: 1; }
+  .cab-btns { display: flex; gap: 6px; grid-row: 1 / span 2; grid-column: 2; }
+  .cab-btns .btn { padding: 8px 12px; font-size: 13px; }
+  .btn-danger { background: #fff; color: var(--red); border: 1.5px solid #F3C3C3; }
+  .btn-danger:hover { box-shadow: none; border-color: var(--red); }
+  .btn-danger.confirm { background: var(--red); color: #fff; }
+  .cab-empty { font-size: 14px; color: var(--muted); }
+
   @media (max-width: 1000px) {
     .channels { grid-template-columns: 1fr; }
     .summary-grid, .cost-grid { grid-template-columns: 1fr 1fr; }
@@ -491,6 +552,9 @@
     .flow-arrow { transform: rotate(90deg); text-align: center; }
   }
   @media (max-width: 560px) {
+    .account-btn { max-width: 120px; padding: 6px 10px; font-size: 13px; }
+    .cab-item { grid-template-columns: 1fr; }
+    .cab-btns { grid-row: auto; grid-column: 1; }
     .band { padding: 40px 0; }
     .channel { grid-template-columns: 1fr; justify-items: center; }
     .channel > div:last-child { justify-self: stretch; }
@@ -525,9 +589,12 @@
       </svg>
       <span class="brand-name">Agro<span>Pulse</span></span>
     </a>
-    <div class="lang" role="group" aria-label="Язык / Тил">
-      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
-      <button type="button" data-lang="ky" aria-pressed="false">KG</button>
+    <div class="top-actions">
+      <button type="button" class="account-btn" id="accountBtn"><span aria-hidden="true">👤</span><span id="accountName"></span></button>
+      <div class="lang" role="group" aria-label="Язык / Тил">
+        <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+        <button type="button" data-lang="ky" aria-pressed="false">KG</button>
+      </div>
     </div>
   </div>
   <nav class="wrap subnav" id="subnav">
@@ -696,8 +763,42 @@
           <div class="best">
             <div class="best-title" data-i18n="bestTitle"></div>
             <div class="best-list" id="bestCrops"></div>
+            <form class="own-crop" id="ownCropForm" autocomplete="off">
+              <label class="field-label" for="ownCropInput" data-i18n="ownLabel"></label>
+              <div class="search">
+                <input id="ownCropInput" type="text" list="cropList" maxlength="40" data-i18n-ph="ownPh">
+                <button type="submit" class="btn btn-green" data-i18n="ownBtn"></button>
+              </div>
+              <datalist id="cropList"></datalist>
+              <div class="form-msg" id="ownMsg" role="status"></div>
+              <div class="own-quiz" id="ownQuiz" hidden>
+                <div class="own-quiz-title" id="ownQuizTitle"></div>
+                <div class="own-q"><span data-i18n="ownQType"></span><div class="chips">
+                  <label><input type="radio" name="ownType" value="seed" checked><span data-i18n="ownSeed"></span></label>
+                  <label><input type="radio" name="ownType" value="plant"><span data-i18n="ownPlant"></span></label>
+                </div></div>
+                <div class="own-q"><span data-i18n="ownQWarm"></span><div class="chips">
+                  <label><input type="radio" name="ownWarm" value="cold"><span data-i18n="ownCold"></span></label>
+                  <label><input type="radio" name="ownWarm" value="mid" checked><span data-i18n="ownMid"></span></label>
+                  <label><input type="radio" name="ownWarm" value="warm"><span data-i18n="ownWarmV"></span></label>
+                </div></div>
+                <div class="own-q"><span data-i18n="ownQWater"></span><div class="chips">
+                  <label><input type="radio" name="ownWater" value="low"><span data-i18n="ownLow"></span></label>
+                  <label><input type="radio" name="ownWater" value="mid" checked><span data-i18n="ownWMid"></span></label>
+                  <label><input type="radio" name="ownWater" value="high"><span data-i18n="ownHigh"></span></label>
+                </div></div>
+                <div class="own-actions">
+                  <button type="button" class="btn btn-green" id="ownAdd" data-i18n="ownAdd"></button>
+                  <button type="button" class="btn btn-ghost" id="ownCancel" data-i18n="ownCancel"></button>
+                </div>
+              </div>
+            </form>
           </div>
           <dl class="field-info" id="fieldInfo"></dl>
+          <div class="save-row" id="saveRow" hidden>
+            <button type="button" class="btn btn-ghost" id="saveFieldBtn"></button>
+            <div class="form-msg" id="saveMsg" role="status"></div>
+          </div>
           <div class="top-places">
             <h3 data-i18n="topTitle"></h3>
             <p class="top-hint" id="topHint"></p>
@@ -829,6 +930,45 @@
 </main>
 
 <footer class="wrap" data-i18n="footer"></footer>
+
+<!-- ===== Вход / регистрация ===== -->
+<dialog class="dlg" id="authDlg" aria-labelledby="authTitle">
+  <div class="dlg-body">
+    <div class="dlg-head"><h2 id="authTitle"></h2><button type="button" class="dlg-close" data-close aria-label="✕">✕</button></div>
+    <div class="seg" role="group">
+      <button type="button" data-auth="login" aria-pressed="true" data-i18n="authLoginTab"></button>
+      <button type="button" data-auth="register" aria-pressed="false" data-i18n="authRegTab"></button>
+    </div>
+    <div class="auth-note" id="authNote"></div>
+    <form class="auth-form" id="authForm" novalidate>
+      <div id="authNameRow" hidden>
+        <label class="field-label" for="authName" data-i18n="authName"></label>
+        <input id="authName" type="text" autocomplete="name" maxlength="60">
+      </div>
+      <div>
+        <label class="field-label" for="authLogin" data-i18n="authLogin"></label>
+        <input id="authLogin" type="text" autocomplete="username" maxlength="120" data-i18n-ph="authLoginPh">
+      </div>
+      <div>
+        <label class="field-label" for="authPass" data-i18n="authPass"></label>
+        <input id="authPass" type="password" autocomplete="current-password" maxlength="200">
+      </div>
+      <div class="form-msg error" id="authMsg" role="alert"></div>
+      <button type="submit" class="btn btn-green btn-big" id="authSubmit"></button>
+    </form>
+  </div>
+</dialog>
+
+<!-- ===== Личный кабинет ===== -->
+<dialog class="dlg wide" id="cabDlg" aria-labelledby="cabTitle">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="cabTitle" data-i18n="cabTitle"></h2><div class="cab-user" id="cabUser"></div></div><button type="button" class="dlg-close" data-close aria-label="✕">✕</button></div>
+    <div class="cab-sec"><h3 data-i18n="cabFields"></h3><ul class="cab-list" id="cabFields"></ul></div>
+    <div class="cab-sec"><h3 data-i18n="cabCrops"></h3><ul class="cab-list" id="cabCrops"></ul></div>
+    <div class="form-msg error" id="cabMsg" role="alert"></div>
+    <div><button type="button" class="btn btn-ghost" id="logoutBtn" data-i18n="logout"></button></div>
+  </div>
+</dialog>
 
 <!-- =====================================================================
      ЛОГИКА ПРИЛОЖЕНИЯ
@@ -993,7 +1133,40 @@ const I18N = {
     // Форма «в какой день» для текста предупреждений
     weekIn: ['в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье'],
     when5: 'Когда спутник заметил, что растения на части поля ослабли',
-    cropGroups: { grain: 'Зерновые', industrial: 'Технические — для переработки', veg: 'Овощи и бобовые', garden: 'Сады и ягоды' },
+    cropGroups: { grain: 'Зерновые', industrial: 'Технические — для переработки', veg: 'Овощи, бахча и бобовые', fodder: 'Кормовые травы', garden: 'Сады, виноград и ягоды', mine: 'Мои культуры' },
+    // Свои культуры
+    ownLabel: 'Нет вашей культуры? Напишите её', ownPh: 'клубника, виноград…', ownBtn: 'Выбрать',
+    ownEmpty: 'Напишите название культуры.',
+    ownFound: 'Есть в справочнике: «{crop}» — уже посчитали.',
+    ownQuizTitle: '«{name}» нет в справочнике. Ответьте на 3 вопроса — и посчитаем.',
+    ownQType: 'Как сажают?', ownSeed: '🌱 Семенами или рассадой', ownPlant: '🌳 Саженцами — растёт много лет',
+    ownQWarm: 'Сколько нужно тепла?', ownCold: '❄️ Холодостойкая', ownMid: '🌤️ Средне', ownWarmV: '☀️ Теплолюбивая',
+    ownQWater: 'Сколько нужно воды?', ownLow: '🌵 Мало', ownWMid: '💧 Средне', ownHigh: '🌊 Много',
+    ownAdd: 'Добавить и посчитать', ownCancel: 'Отмена',
+    ownSavedLocal: '«{crop}» добавлена в этом браузере. Войдите — и она будет в кабинете на любом устройстве.',
+    ownSavedAcc: '«{crop}» добавлена в ваш кабинет.',
+    // Сохранение поля
+    saveField: '💾 Сохранить поле в кабинет', saveUpdate: '💾 Сохранить изменения', saved: '✓ Поле сохранено', saving: 'Сохраняем…',
+    saveOk: 'Готово. Все ваши поля — в личном кабинете (кнопка вверху).',
+    fieldDefaultName: 'Моё поле',
+    // Вход и кабинет
+    accLogin: 'Войти',
+    authLoginTab: 'Вход', authRegTab: 'Регистрация', authTitleLogin: 'Вход в кабинет', authTitleReg: 'Регистрация',
+    authName: 'Как вас зовут', authLogin: 'Телефон или email', authLoginPh: '0555 123 456 или name@mail.kg', authPass: 'Пароль — не меньше 6 символов',
+    authSubmitLogin: 'Войти', authSubmitReg: 'Зарегистрироваться', authWait: 'Секунду…',
+    authNeedSave: 'Войдите или зарегистрируйтесь — и поле сохранится в ваш кабинет.',
+    err_name: 'Напишите, как вас зовут.', err_login: 'Введите телефон (0555 123 456) или email.', err_password: 'Пароль — не меньше 6 символов.',
+    err_exists: 'Этот телефон или email уже зарегистрирован — войдите.', err_wrong: 'Неверный телефон, email или пароль.',
+    err_too_many: 'Слишком много попыток. Подождите 15 минут.', err_limit: 'Достигнут лимит записей.',
+    err_offline: 'Кабинет сейчас недоступен — попробуйте позже.', err_server: 'Что-то пошло не так — попробуйте ещё раз.',
+    cabTitle: 'Личный кабинет', cabFields: 'Мои поля', cabCrops: 'Мои культуры',
+    cabNoFields: 'Пока пусто. Выберите место или обведите поле на карте и нажмите «Сохранить поле в кабинет».',
+    cabNoCrops: 'Своих культур пока нет — их можно добавить под списком «Что здесь вырастет».',
+    cabOpen: 'Открыть', cabDelete: 'Удалить', cabConfirm: 'Точно удалить?', cabRename: 'Название поля',
+    cabDrawn: '{ha} га, свои границы', cabPoint: 'точка на карте',
+    cabTypeSeed: 'сеют', cabTypePlant: 'саженцы', cabWarm: { cold: 'холодостойкая', mid: 'средне по теплу', warm: 'теплолюбивая' },
+    cabWater: { low: 'мало воды', mid: 'средне воды', high: 'много воды' },
+    logout: 'Выйти',
     bestTitle: 'Что здесь вырастет лучше всего (нажмите, чтобы выбрать)',
     tgBest: 'Ещё подойдут: {list}',
     sowTitleSeed: '🌱 Когда сеять', sowTitlePlant: '🌳 Когда сажать саженцы',
@@ -1188,7 +1361,37 @@ const I18N = {
     weekShort: ['Дш', 'Шш', 'Шр', 'Бш', 'Жм', 'Иш', 'Жк'],
     weekIn: ['дүйшөмбү күнү', 'шейшемби күнү', 'шаршемби күнү', 'бейшемби күнү', 'жума күнү', 'ишемби күнү', 'жекшемби күнү'],
     when5: 'Спутник талаанын бир бөлүгүндө өсүмдүктөр алсыраганын байкаганда',
-    cropGroups: { grain: 'Дан эгиндери', industrial: 'Техникалык — кайра иштетүү үчүн', veg: 'Жашылча жана буурчак', garden: 'Бактар жана мөмөлөр' },
+    cropGroups: { grain: 'Дан эгиндери', industrial: 'Техникалык — кайра иштетүү үчүн', veg: 'Жашылча, бакча жана буурчак', fodder: 'Тоют чөптөрү', garden: 'Бактар, жүзүм жана мөмөлөр', mine: 'Менин өсүмдүктөрүм' },
+    ownLabel: 'Өсүмдүгүңүз жокпу? Атын жазыңыз', ownPh: 'кулпунай, жүзүм…', ownBtn: 'Тандоо',
+    ownEmpty: 'Өсүмдүктүн атын жазыңыз.',
+    ownFound: 'Маалымдамада бар: «{crop}» — эсептедик.',
+    ownQuizTitle: '«{name}» маалымдамада жок. 3 суроого жооп бериңиз — эсептеп беребиз.',
+    ownQType: 'Кантип отургузулат?', ownSeed: '🌱 Үрөн же көчөт менен', ownPlant: '🌳 Көчөт — көп жыл өсөт',
+    ownQWarm: 'Канча жылуулук керек?', ownCold: '❄️ Суукка чыдамдуу', ownMid: '🌤️ Орточо', ownWarmV: '☀️ Жылуулукту сүйөт',
+    ownQWater: 'Канча суу керек?', ownLow: '🌵 Аз', ownWMid: '💧 Орточо', ownHigh: '🌊 Көп',
+    ownAdd: 'Кошуу жана эсептөө', ownCancel: 'Жокко чыгаруу',
+    ownSavedLocal: '«{crop}» ушул браузерге кошулду. Кириңиз — ал ар кандай түзмөктө кабинетиңизде болот.',
+    ownSavedAcc: '«{crop}» кабинетиңизге кошулду.',
+    saveField: '💾 Талааны кабинетке сактоо', saveUpdate: '💾 Өзгөртүүлөрдү сактоо', saved: '✓ Талаа сакталды', saving: 'Сактап жатабыз…',
+    saveOk: 'Даяр. Бардык талааларыңыз — жеке кабинетте (жогорудагы баскыч).',
+    fieldDefaultName: 'Менин талаам',
+    accLogin: 'Кирүү',
+    authLoginTab: 'Кирүү', authRegTab: 'Катталуу', authTitleLogin: 'Кабинетке кирүү', authTitleReg: 'Катталуу',
+    authName: 'Атыңыз ким', authLogin: 'Телефон же email', authLoginPh: '0555 123 456 же name@mail.kg', authPass: 'Сырсөз — 6 белгиден кем эмес',
+    authSubmitLogin: 'Кирүү', authSubmitReg: 'Катталуу', authWait: 'Бир секунд…',
+    authNeedSave: 'Кириңиз же катталыңыз — талаа кабинетиңизге сакталат.',
+    err_name: 'Атыңызды жазыңыз.', err_login: 'Телефонду (0555 123 456) же email жазыңыз.', err_password: 'Сырсөз — 6 белгиден кем эмес.',
+    err_exists: 'Бул телефон же email катталган — кириңиз.', err_wrong: 'Телефон, email же сырсөз туура эмес.',
+    err_too_many: 'Аракет өтө көп. 15 мүнөт күтүңүз.', err_limit: 'Жазуулардын чегине жеттиңиз.',
+    err_offline: 'Кабинет азыр жеткиликсиз — кийинчерээк аракет кылыңыз.', err_server: 'Бир нерсе туура эмес болду — кайра аракет кылыңыз.',
+    cabTitle: 'Жеке кабинет', cabFields: 'Менин талааларым', cabCrops: 'Менин өсүмдүктөрүм',
+    cabNoFields: 'Азырынча бош. Картадан жер тандаңыз же талааны белгилеп, «Талааны кабинетке сактоо» баскычын басыңыз.',
+    cabNoCrops: 'Өз өсүмдүктөрүңүз азырынча жок — аларды «Бул жерде эмне жакшы өсөт» тизмесинин астынан кошсо болот.',
+    cabOpen: 'Ачуу', cabDelete: 'Өчүрүү', cabConfirm: 'Чын эле өчүрөсүзбү?', cabRename: 'Талаанын аты',
+    cabDrawn: '{ha} га, өз чектери', cabPoint: 'картадагы чекит',
+    cabTypeSeed: 'себилет', cabTypePlant: 'көчөт', cabWarm: { cold: 'суукка чыдамдуу', mid: 'жылуулук орточо', warm: 'жылуулукту сүйөт' },
+    cabWater: { low: 'суу аз', mid: 'суу орточо', high: 'суу көп' },
+    logout: 'Чыгуу',
     bestTitle: 'Бул жерде эмне эң жакшы өсөт (тандоо үчүн басыңыз)',
     tgBest: 'Дагы ылайыктуу: {list}',
     sowTitleSeed: '🌱 Качан себүү керек', sowTitlePlant: '🌳 Көчөттөрдү качан отургузуу керек',
@@ -1247,7 +1450,10 @@ const state = {
   zoneView: 'now', zoneLayer: null, lastResult: null, drawing: false,
   pointGen: 0,
   mapStatusKey: '', mapStatusBusy: false,
-  climateCache: {}     // 40-летние ряды кэшируем, чтобы не пересчитывать при переключении
+  climateCache: {},    // 40-летние ряды кэшируем, чтобы не пересчитывать при переключении
+  account: null,       // вошедший пользователь: { user, fields, crops }
+  localCrops: [],      // свои культуры без входа — в этом браузере
+  authMode: 'login', pendingSave: false
 };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1860,12 +2066,11 @@ function renderStatic() {
   document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
   $('heroTitle').innerHTML = t('heroTitle');
 
-  const groups = I18N[state.lang].cropGroups;
-  $('cropSelect').innerHTML = Object.keys(groups).map(g => `<optgroup label="${groups[g]}">` +
-    Object.keys(CONFIG.crops).filter(id => CONFIG.crops[id].group === g)
-      .map(id => `<option value="${id}">${cropName(id)}</option>`).join('') + '</optgroup>').join('');
-  $('cropSelect').value = state.cropId;
+  renderCropSelect();
   renderFieldSelect();
+  renderAccountBtn();
+  setAuthMode(state.authMode);
+  if ($('cabDlg').open) renderCabinet();
 
   $('mapLegend').innerHTML = ['good', 'mid', 'bad']
     .map(c => `<span><i style="background:${SUIT_COLOR[c]};opacity:${c === 'bad' ? .55 : .85}"></i>${suitLabel(c)}</span>`).join('') +
@@ -1875,6 +2080,18 @@ function renderStatic() {
   renderMissions();
   renderNdviDemo();
   renderMapStatus();
+}
+
+// Список культур по группам (пустые группы — например, «Мои культуры» без своих — не показываем)
+function renderCropSelect() {
+  const groups = I18N[state.lang].cropGroups;
+  const ids = Object.keys(CONFIG.crops);
+  $('cropSelect').innerHTML = Object.keys(groups).map(g => {
+    const list = ids.filter(id => CONFIG.crops[id].group === g);
+    return list.length ? `<optgroup label="${groups[g]}">` + list.map(id => `<option value="${id}">${esc(cropName(id))}</option>`).join('') + '</optgroup>' : '';
+  }).join('');
+  $('cropSelect').value = state.cropId;
+  $('cropList').innerHTML = ids.map(id => `<option value="${esc(cropName(id))}"></option>`).join('');
 }
 
 // Название места: у демо-полей — город, у точки — село из поиска/обратного геокодинга
@@ -1897,7 +2114,7 @@ function renderPoint(field, r) {
   $('pointName').textContent = field.custom ? '📍 ' + placeName(field) : field.name[state.lang];
   const s = r.suit;
   $('suitBox').innerHTML = `
-    <div class="suit-label">${t('suitTitle', { crop: r.crop.name[state.lang] })}</div>
+    <div class="suit-label">${t('suitTitle', { crop: esc(r.crop.name[state.lang]) })}</div>
     <div class="suit-top">
       <div class="suit-score">${Math.round(s.score * 100)}<small>%</small></div>
       <span class="badge ${SUIT_TONE[s.cls]}">${suitLabel(s.cls)}</span>
@@ -1906,10 +2123,12 @@ function renderPoint(field, r) {
     <p class="suit-reason">${suitText(s, r.env, field.land)}</p>`;
   renderLand(field);
   $('bestCrops').parentElement.hidden = r.notField;
-  $('bestCrops').innerHTML = r.best.map(b => `
+  const best = r.best.some(b => b.id === state.cropId) ? r.best : [...r.best, { id: state.cropId, s: r.suit }];
+  $('bestCrops').innerHTML = best.map(b => `
     <button type="button" data-crop="${b.id}" aria-pressed="${b.id === state.cropId}">
-      <i style="background:${SUIT_COLOR[b.s.cls]}"></i>${cropName(b.id)} <small>${Math.round(b.s.score * 100)}%</small>
+      <i style="background:${SUIT_COLOR[b.s.cls]}"></i>${esc(cropName(b.id))} <small>${Math.round(b.s.score * 100)}%</small>
     </button>`).join('');
+  renderSaveRow(field);
   $('fieldInfo').innerHTML = `
     <div><dt>${t('area')}</dt><dd>${field.drawn ? t('drawnArea', { ha: fmtNum(field.areaHa, field.areaHa < 10 ? 1 : 0) }) : field.custom ? t('customArea') : field.areaHa + ' ' + t('areaUnit')}</dd></div>
     <div><dt>${t('coords')}</dt><dd>${field.lat.toFixed(3)}, ${field.lon.toFixed(3)}</dd></div>
@@ -2544,7 +2763,7 @@ async function selectField(id, { fly = true } = {}) {
 }
 
 // Разбор произвольной точки: высота и уклон по 5 точкам вокруг, затем все блоки
-async function selectPoint(lat, lon, { fly = false, name = null, shape = null } = {}) {
+async function selectPoint(lat, lon, { fly = false, name = null, shape = null, saved = null } = {}) {
   const gen = ++state.pointGen;
   $('pointCard').classList.add('loading');
   if (fly && state.map) {
@@ -2558,6 +2777,8 @@ async function selectPoint(lat, lon, { fly = false, name = null, shape = null } 
   const slope = Math.atan(Math.hypot((e[1] - e[2]) / dy, (e[3] - e[4]) / dx)) * 180 / Math.PI;
   const field = makeCustomField(lat, lon, e[0], slope, shape || {});
   field.place = name;
+  // Поле из кабинета (или его правка): кнопка сохранения обновит ту же запись
+  if (saved) Object.assign(field, { savedId: saved.id, savedName: saved.name, savedCrop: saved.cropId, dirty: !!saved.edited });
   state.customField = field;
   drawCustomField(field);
   renderMapStatus();
@@ -2578,8 +2799,9 @@ async function selectPoint(lat, lon, { fly = false, name = null, shape = null } 
 async function selectPolygon(ring, { keepPlace = false } = {}) {
   if (ring.length < 3) return;
   const { ha, lat, lon } = polyArea(ring);
-  const name = keepPlace && state.customField ? state.customField.place : null;
-  await selectPoint(lat, lon, { name, shape: { outline: ring, areaHa: ha } });
+  const prev = keepPlace ? state.customField : null;
+  const saved = prev && prev.savedId ? { id: prev.savedId, name: prev.savedName, cropId: prev.savedCrop, edited: true } : null;
+  await selectPoint(lat, lon, { name: prev ? prev.place : null, shape: { outline: ring, areaHa: ha }, saved });
 }
 
 async function reverseName(lat, lon) {
@@ -2652,6 +2874,367 @@ function renderDrawBtn() {
   $('drawBtn').setAttribute('aria-pressed', String(!!state.drawing));
 }
 
+/* =====================================================================
+   СВОИ КУЛЬТУРЫ
+   Если культуры нет в справочнике, фермер отвечает на 3 вопроса,
+   и мы подбираем ей требования по образцу похожих культур.
+   ===================================================================== */
+const OWN_WARMTH = {
+  cold: { temp: [1.5, 4.5, 11, 15], sowTemp: 5 },    // как ячмень, капуста, смородина
+  mid:  { temp: [5, 7.5, 13, 17], sowTemp: 8 },      // как пшеница, яблоня
+  warm: { temp: [8.5, 10.5, 16, 20], sowTemp: 12 }   // как кукуруза, персик, томаты
+};
+const OWN_WATER = { low: 0.2, mid: 0.3, high: 0.42 };
+const normName = v => String(v).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+const ownId = c => 'my' + (c.id != null ? c.id : 'L' + c.localId);
+const ownCrops = () => (state.account ? state.account.crops : state.localCrops);
+
+function ownCropConfig(c) {
+  const w = OWN_WARMTH[c.warmth] || OWN_WARMTH.mid;
+  return {
+    group: 'mine', own: true, perennial: !!c.perennial, name: { ru: c.name, ky: c.name },
+    temp: w.temp, sowTemp: w.sowTemp, moist: OWN_WATER[c.water] ?? OWN_WATER.mid, slope: c.perennial ? [8, 18] : [4, 10]
+  };
+}
+
+// Подставляем свои культуры в справочник; если выбранная исчезла (вышли из кабинета) — берём пшеницу
+function syncOwnCrops() {
+  for (const id of Object.keys(CONFIG.crops)) if (CONFIG.crops[id].own) delete CONFIG.crops[id];
+  for (const c of ownCrops()) CONFIG.crops[ownId(c)] = ownCropConfig(c);
+  const lost = !CONFIG.crops[state.cropId];
+  if (lost) state.cropId = 'wheat';
+  renderCropSelect();
+  return lost;
+}
+
+function loadLocalCrops() {
+  try { const v = JSON.parse(localStorage.getItem('agropulse-crops') || '[]'); if (Array.isArray(v)) state.localCrops = v.filter(c => c && c.name); }
+  catch (e) { /* хранилище недоступно */ }
+}
+function saveLocalCrops() {
+  try { localStorage.setItem('agropulse-crops', JSON.stringify(state.localCrops)); } catch (e) { /* ignore */ }
+}
+
+// Ищем культуру по названию (рус./кырг., синонимы); начало слова — если совпадение одно
+function findCrop(q) {
+  const n = normName(q);
+  const ids = Object.keys(CONFIG.crops);
+  const names = id => { const c = CONFIG.crops[id]; return [c.name.ru, c.name.ky, ...(c.alias || [])].map(normName); };
+  const exact = ids.find(id => names(id).includes(n));
+  if (exact || n.length < 4) return exact || null;
+  const near = ids.filter(id => names(id).some(x => x.split(' ').some(w => w.startsWith(n)) || n.startsWith(x)));
+  return near.length === 1 ? near[0] : null;
+}
+
+function pickCrop(id) {
+  $('cropSelect').value = id;
+  setCrop(id);
+}
+
+function onOwnCropSubmit(e) {
+  e.preventDefault();
+  const q = $('ownCropInput').value.trim();
+  const msg = $('ownMsg');
+  msg.className = 'form-msg';
+  if (!q) { msg.className = 'form-msg error'; msg.textContent = t('ownEmpty'); return; }
+  const id = findCrop(q);
+  if (id) {
+    $('ownQuiz').hidden = true;
+    msg.textContent = t('ownFound', { crop: cropName(id) });
+    $('ownCropInput').value = '';
+    pickCrop(id);
+    return;
+  }
+  msg.textContent = '';
+  $('ownQuizTitle').textContent = t('ownQuizTitle', { name: capitalize(q) });
+  $('ownQuiz').hidden = false;
+}
+
+async function addOwnCrop() {
+  const form = $('ownCropForm');
+  const crop = {
+    name: capitalize($('ownCropInput').value.trim()).slice(0, 40),
+    perennial: form.ownType.value === 'plant', warmth: form.ownWarm.value, water: form.ownWater.value
+  };
+  const msg = $('ownMsg');
+  if (!crop.name) return;
+  $('ownAdd').disabled = true;
+  try {
+    if (state.account) {
+      const { crop: saved } = await Api.call('POST', '/crops', crop);
+      state.account.crops.push(saved);
+      crop.id = saved.id;
+    } else {
+      crop.localId = Date.now();
+      state.localCrops.push(crop);
+      saveLocalCrops();
+    }
+    syncOwnCrops();
+    $('ownQuiz').hidden = true;
+    $('ownCropInput').value = '';
+    msg.className = 'form-msg';
+    msg.textContent = t(state.account ? 'ownSavedAcc' : 'ownSavedLocal', { crop: crop.name });
+    pickCrop(ownId(crop));
+    if ($('cabDlg').open) renderCabinet();
+  } catch (err) {
+    msg.className = 'form-msg error';
+    msg.textContent = errText(err);
+  } finally {
+    $('ownAdd').disabled = false;
+  }
+}
+
+/* =====================================================================
+   ВХОД И ЛИЧНЫЙ КАБИНЕТ (api/server.js за nginx по адресу /api/)
+   ===================================================================== */
+const Api = {
+  async call(method, path, body) {
+    let res;
+    try {
+      res = await fetch('/api' + path, {
+        method, credentials: 'same-origin',
+        headers: method === 'GET' ? {} : { 'Content-Type': 'application/json' },
+        body: method === 'GET' ? undefined : JSON.stringify(body || {})
+      });
+    } catch (e) { throw Object.assign(new Error('offline'), { code: 'offline' }); }
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* не JSON — значит, API не подключён */ }
+    if (!data) throw Object.assign(new Error('offline'), { code: 'offline' });
+    if (!res.ok) throw Object.assign(new Error(data.error), { code: data.error, status: res.status });
+    return data;
+  }
+};
+const errText = err => I18N[state.lang]['err_' + err.code] || t('err_server');
+
+async function loadAccount() {
+  try { setAccount(await Api.call('GET', '/me')); }
+  catch (e) { setAccount(null); }
+}
+
+function setAccount(acc) {
+  state.account = acc;
+  if (syncOwnCrops()) paintGrid();
+  renderAccountBtn();
+  if (state.data) renderAll(false);
+  if ($('cabDlg').open) { if (acc) renderCabinet(); else $('cabDlg').close(); }
+}
+
+function renderAccountBtn() {
+  $('accountName').textContent = state.account ? state.account.user.name : t('accLogin');
+}
+
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const reg = mode === 'register';
+  document.querySelectorAll('[data-auth]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.auth === mode)));
+  $('authNameRow').hidden = !reg;
+  $('authTitle').textContent = t(reg ? 'authTitleReg' : 'authTitleLogin');
+  $('authSubmit').textContent = t(reg ? 'authSubmitReg' : 'authSubmitLogin');
+  $('authPass').autocomplete = reg ? 'new-password' : 'current-password';
+}
+
+function openAuth(mode = 'login', note = '') {
+  setAuthMode(mode);
+  $('authNote').textContent = note;
+  $('authMsg').textContent = '';
+  $('authDlg').showModal();
+  (mode === 'register' ? $('authName') : $('authLogin')).focus();
+}
+
+async function onAuthSubmit(e) {
+  e.preventDefault();
+  const reg = state.authMode === 'register';
+  const body = { login: $('authLogin').value.trim(), password: $('authPass').value };
+  if (reg) body.name = $('authName').value.trim();
+  const local = reg && !body.name ? 'name' : !body.login ? 'login' : body.password.length < 6 ? (reg ? 'password' : 'wrong') : null;
+  if (local) { $('authMsg').textContent = errText({ code: local }); return; }
+  const btn = $('authSubmit');
+  btn.disabled = true;
+  btn.textContent = t('authWait');
+  try {
+    const acc = await Api.call('POST', reg ? '/register' : '/login', body);
+    await afterAuth(acc);
+  } catch (err) {
+    $('authMsg').textContent = errText(err);
+  } finally {
+    btn.disabled = false;
+    setAuthMode(state.authMode);
+  }
+}
+
+// После входа переносим культуры, добавленные без входа, в кабинет
+async function afterAuth(acc) {
+  const moved = {};
+  for (const c of state.localCrops) {
+    const same = acc.crops.find(x => normName(x.name) === normName(c.name));
+    try {
+      const saved = same || (await Api.call('POST', '/crops', { name: c.name, perennial: c.perennial, warmth: c.warmth, water: c.water })).crop;
+      if (!same) acc.crops.push(saved);
+      moved[ownId(c)] = ownId(saved);
+    } catch (e) { /* не перенеслась — останется только в браузере */ }
+  }
+  state.localCrops = state.localCrops.filter(c => !moved[ownId(c)]);
+  saveLocalCrops();
+  if (moved[state.cropId]) state.cropId = moved[state.cropId];
+  const pending = state.pendingSave;
+  state.pendingSave = false;
+  $('authPass').value = '';
+  $('authDlg').close();
+  setAccount(acc);
+  if (pending) saveCurrentField();
+}
+
+async function logout() {
+  try { await Api.call('POST', '/logout'); } catch (e) { /* сессия и так закончится */ }
+  if (state.customField) delete state.customField.savedId;
+  setAccount(null);
+}
+
+/* ---------- Сохранение поля ---------- */
+function renderSaveRow(field) {
+  const row = $('saveRow');
+  row.hidden = !field.custom;
+  if (!field.custom) return;
+  const changed = field.dirty || (field.savedId && field.savedCrop !== state.cropId);
+  const btn = $('saveFieldBtn');
+  btn.textContent = t(!field.savedId ? 'saveField' : changed ? 'saveUpdate' : 'saved');
+  btn.disabled = !!field.savedId && !changed;
+  const msg = $('saveMsg');
+  msg.className = 'form-msg' + (field.saveError ? ' error' : '');
+  msg.textContent = field.saveError || (field.justSaved && !changed ? t('saveOk') : '');
+}
+
+function savedFieldName(f) {
+  const place = f.place || t('fieldDefaultName');
+  return f.drawn ? `${place} · ${fmtNum(f.areaHa, f.areaHa < 100 ? 1 : 0)} ${t('areaUnit')}` : place;
+}
+
+async function saveCurrentField() {
+  const f = state.customField;
+  if (!f || state.fieldId !== 'custom') return;
+  if (!state.account) { state.pendingSave = true; openAuth('login', t('authNeedSave')); return; }
+  const body = {
+    name: f.savedName || savedFieldName(f), place: f.place, lat: f.lat, lon: f.lon,
+    outline: f.drawn ? f.outline : null, drawn: f.drawn, areaHa: f.drawn ? round2(f.areaHa) : null, cropId: state.cropId
+  };
+  const btn = $('saveFieldBtn');
+  btn.disabled = true;
+  btn.textContent = t('saving');
+  f.saveError = '';
+  try {
+    const { field } = f.savedId ? await Api.call('PUT', '/fields/' + f.savedId, body) : await Api.call('POST', '/fields', body);
+    const list = state.account.fields;
+    const i = list.findIndex(x => x.id === field.id);
+    if (i >= 0) list[i] = field; else list.push(field);
+    Object.assign(f, { savedId: field.id, savedName: field.name, savedCrop: field.cropId, dirty: false, justSaved: true });
+  } catch (err) {
+    if (err.code === 'auth') { setAccount(null); state.pendingSave = true; openAuth('login', t('authNeedSave')); }
+    else f.saveError = errText(err);
+  }
+  if (state.customField === f && state.fieldId === 'custom') renderSaveRow(f);
+}
+
+/* ---------- Кабинет ---------- */
+function fieldMeta(f) {
+  const crop = f.cropId && CONFIG.crops[f.cropId] ? cropName(f.cropId) : '—';
+  return [crop, f.drawn ? t('cabDrawn', { ha: fmtNum(f.areaHa || 0, 1) }) : t('cabPoint'), f.place].filter(Boolean).join(' · ');
+}
+function cropMeta(c) {
+  const L = I18N[state.lang];
+  return [t(c.perennial ? 'cabTypePlant' : 'cabTypeSeed'), L.cabWarm[c.warmth], L.cabWater[c.water]].join(' · ');
+}
+
+function renderCabinet() {
+  const a = state.account;
+  if (!a) return;
+  $('cabUser').textContent = `${a.user.name} · ${a.user.login}`;
+  const btns = open => `<div class="cab-btns">${open ? `<button type="button" class="btn btn-green" data-open>${t('cabOpen')}</button>` : ''}<button type="button" class="btn btn-danger" data-del>${t('cabDelete')}</button></div>`;
+  $('cabFields').innerHTML = a.fields.length ? a.fields.map(f => `
+    <li class="cab-item" data-id="${f.id}">
+      <input type="text" value="${esc(f.name)}" maxlength="80" data-rename aria-label="${t('cabRename')}">
+      <div class="cab-meta">${esc(fieldMeta(f))}</div>${btns(true)}
+    </li>`).join('') : `<li class="cab-empty">${t('cabNoFields')}</li>`;
+  $('cabCrops').innerHTML = a.crops.length ? a.crops.map(c => `
+    <li class="cab-item" data-id="${c.id}">
+      <b>${esc(c.name)}</b>
+      <div class="cab-meta">${esc(cropMeta(c))}</div>${btns(false)}
+    </li>`).join('') : `<li class="cab-empty">${t('cabNoCrops')}</li>`;
+  $('cabMsg').textContent = '';
+}
+
+function openCabinet() {
+  renderCabinet();
+  $('cabDlg').showModal();
+}
+
+async function openSavedField(sf) {
+  $('cabDlg').close();
+  if (sf.cropId && CONFIG.crops[sf.cropId] && sf.cropId !== state.cropId) {
+    state.cropId = sf.cropId;
+    $('cropSelect').value = sf.cropId;
+    paintGrid();
+  }
+  $('sec-demo').querySelector('.map-card').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+  await selectPoint(sf.lat, sf.lon, {
+    fly: !sf.outline, name: sf.place, shape: sf.outline ? { outline: sf.outline, areaHa: sf.areaHa } : null,
+    saved: { id: sf.id, name: sf.name, cropId: sf.cropId }
+  });
+  if (sf.outline && state.map) state.map.flyToBounds(L.latLngBounds(sf.outline), { maxZoom: 16, padding: [30, 30], duration: reducedMotion ? 0 : 1.2 });
+}
+
+// Удаление — в два нажатия: «Удалить» → «Точно удалить?»
+function confirmDelete(btn) {
+  if (btn.classList.contains('confirm')) return true;
+  btn.classList.add('confirm');
+  btn.textContent = t('cabConfirm');
+  setTimeout(() => { if (btn.isConnected) { btn.classList.remove('confirm'); btn.textContent = t('cabDelete'); } }, 4000);
+  return false;
+}
+
+async function onCabinetClick(e) {
+  const item = e.target.closest('.cab-item');
+  if (!item || !state.account) return;
+  const id = +item.dataset.id;
+  const isField = item.parentElement.id === 'cabFields';
+  const a = state.account;
+  try {
+    if (e.target.closest('[data-open]')) return openSavedField(a.fields.find(f => f.id === id));
+    const del = e.target.closest('[data-del]');
+    if (!del || !confirmDelete(del)) return;
+    del.disabled = true;
+    await Api.call('DELETE', (isField ? '/fields/' : '/crops/') + id);
+    if (isField) {
+      a.fields = a.fields.filter(f => f.id !== id);
+      if (state.customField && state.customField.savedId === id) delete state.customField.savedId;
+    } else {
+      a.crops = a.crops.filter(c => c.id !== id);
+      if (syncOwnCrops()) paintGrid();
+    }
+    if (state.data) renderAll(false);
+    renderCabinet();
+  } catch (err) {
+    if (err.code === 'auth') return setAccount(null);
+    $('cabMsg').textContent = errText(err);
+  }
+}
+
+async function onCabinetRename(e) {
+  const input = e.target.closest('[data-rename]');
+  if (!input || !state.account) return;
+  const id = +input.closest('.cab-item').dataset.id;
+  const f = state.account.fields.find(x => x.id === id);
+  const name = input.value.trim();
+  if (!f || !name || name === f.name) { input.value = f ? f.name : ''; return; }
+  try {
+    const { field } = await Api.call('PUT', '/fields/' + id, { ...f, name });
+    Object.assign(f, field);
+    if (state.customField && state.customField.savedId === id) state.customField.savedName = field.name;
+  } catch (err) {
+    input.value = f.name;
+    $('cabMsg').textContent = errText(err);
+  }
+}
+
 function setLang(lang) {
   state.lang = lang;
   try { localStorage.setItem('agropulse-lang', lang); } catch (e) { /* хранилище недоступно — не страшно */ }
@@ -2662,6 +3245,7 @@ function setLang(lang) {
 
 function setCrop(id) {
   state.cropId = id;
+  if (state.customField) state.customField.justSaved = state.customField.saveError = false;
   paintGrid();
   if (state.data) renderAll(true);
 }
@@ -2725,6 +3309,8 @@ document.addEventListener('DOMContentLoaded', () => {
   try { const saved = localStorage.getItem('agropulse-lang'); if (saved && I18N[saved]) state.lang = saved; } catch (e) { /* ignore */ }
   state.fieldId = CONFIG.fields[0].id;
   state.cropId = CONFIG.fields[0].crop;
+  loadLocalCrops();
+  syncOwnCrops();
 
   renderStatic();
   initMap();
@@ -2768,6 +3354,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // График спрятан в <details> — после раскрытия подгоняем его под ширину
   $('sowDetails').addEventListener('toggle', () => { if (state.chart) state.chart.resize(); });
+
+  // Свои культуры, вход и кабинет
+  $('ownCropForm').addEventListener('submit', onOwnCropSubmit);
+  $('ownAdd').addEventListener('click', addOwnCrop);
+  $('ownCancel').addEventListener('click', () => { $('ownQuiz').hidden = true; });
+  $('saveFieldBtn').addEventListener('click', saveCurrentField);
+  $('accountBtn').addEventListener('click', () => (state.account ? openCabinet() : openAuth('login')));
+  document.querySelectorAll('[data-auth]').forEach(b => b.addEventListener('click', () => { setAuthMode(b.dataset.auth); $('authMsg').textContent = ''; }));
+  $('authForm').addEventListener('submit', onAuthSubmit);
+  $('authDlg').addEventListener('close', () => { state.pendingSave = false; });
+  $('logoutBtn').addEventListener('click', logout);
+  $('cabDlg').addEventListener('click', onCabinetClick);
+  $('cabDlg').addEventListener('change', onCabinetRename);
+  document.querySelectorAll('dialog.dlg').forEach(d => d.addEventListener('click', e => {
+    if (e.target === d || e.target.closest('[data-close]')) d.close();  // клик по затемнению или по ✕
+  }));
+  loadAccount();
 
   // На старте — обзор всей долины со слоем пригодности и первое демо-поле
   selectField(state.fieldId, { fly: false });
@@ -2834,7 +3437,38 @@ const CONFIG = {
     beans:     { group: 'veg', name: { ru: 'Фасоль', ky: 'Төө буурчак' }, temp: [7, 9, 14, 18], moist: 0.35, slope: [5, 10], sowTemp: 10 },
     raspberry: { group: 'garden', perennial: true, name: { ru: 'Малина', ky: 'Малина' }, temp: [4, 6.5, 11, 15], moist: 0.40, slope: [6, 15], sowTemp: 5 },
     apple:     { group: 'garden', perennial: true, name: { ru: 'Яблоня', ky: 'Алма' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
-    apricot:   { group: 'garden', perennial: true, name: { ru: 'Абрикос', ky: 'Өрүк' }, temp: [8.5, 10.5, 15, 19], moist: 0.25, slope: [8, 20], sowTemp: 6 }
+    apricot:   { group: 'garden', perennial: true, name: { ru: 'Абрикос', ky: 'Өрүк' }, temp: [8.5, 10.5, 15, 19], moist: 0.25, slope: [8, 20], sowTemp: 6 },
+    // Расширенный справочник: требования — по агрономическим нормам для долин Кыргызстана (оценка для прототипа)
+    oats:      { group: 'grain', name: { ru: 'Овёс', ky: 'Сулу' }, temp: [2.5, 5, 11, 15], moist: 0.30, slope: [6, 14], sowTemp: 5 },
+    rye:       { group: 'grain', name: { ru: 'Рожь', ky: 'Кара буудай' }, temp: [1, 4, 11, 15], moist: 0.22, slope: [6, 15], sowTemp: 5 },
+    rice:      { group: 'grain', name: { ru: 'Рис', ky: 'Күрүч' }, temp: [10, 12, 17, 22], moist: 0.60, slope: [1, 3], sowTemp: 13 },
+    buckwheat: { group: 'grain', name: { ru: 'Гречиха', ky: 'Гречка' }, alias: ['гречка'], temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 12], sowTemp: 10 },
+    tobacco:   { group: 'industrial', name: { ru: 'Табак', ky: 'Тамеки' }, temp: [10, 12, 17, 21], moist: 0.38, slope: [3, 8], sowTemp: 15 },
+    soy:       { group: 'veg', name: { ru: 'Соя', ky: 'Соя' }, temp: [8, 10, 15, 19], moist: 0.40, slope: [3, 8], sowTemp: 12 },
+    peas:      { group: 'veg', name: { ru: 'Горох', ky: 'Буурчак' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 10], sowTemp: 5 },
+    chickpea:  { group: 'veg', name: { ru: 'Нут', ky: 'Нокот' }, temp: [8, 10, 16, 20], moist: 0.18, slope: [4, 10], sowTemp: 8 },
+    tomato:    { group: 'veg', name: { ru: 'Томаты', ky: 'Помидор' }, alias: ['помидоры', 'помидор', 'томат'], temp: [8, 10.5, 16, 20], moist: 0.40, slope: [3, 8], sowTemp: 14 },
+    cucumber:  { group: 'veg', name: { ru: 'Огурцы', ky: 'Бадыраң' }, alias: ['огурец'], temp: [8, 10, 15, 19], moist: 0.45, slope: [3, 7], sowTemp: 15 },
+    pepper:    { group: 'veg', name: { ru: 'Перец', ky: 'Калемпир' }, alias: ['болгарский перец'], temp: [9, 11, 16, 20], moist: 0.42, slope: [3, 7], sowTemp: 15 },
+    onion:     { group: 'veg', name: { ru: 'Лук', ky: 'Пияз' }, temp: [4, 7, 13, 17], moist: 0.35, slope: [3, 8], sowTemp: 7 },
+    garlic:    { group: 'veg', name: { ru: 'Чеснок', ky: 'Сарымсак' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [4, 9], sowTemp: 5 },
+    carrot:    { group: 'veg', name: { ru: 'Морковь', ky: 'Сабиз' }, temp: [3, 6, 12, 16], moist: 0.35, slope: [4, 9], sowTemp: 7 },
+    cabbage:   { group: 'veg', name: { ru: 'Капуста', ky: 'Капуста' }, temp: [2, 5, 11, 15], moist: 0.45, slope: [4, 9], sowTemp: 6 },
+    melon:     { group: 'veg', name: { ru: 'Дыня', ky: 'Коон' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
+    watermelon:{ group: 'veg', name: { ru: 'Арбуз', ky: 'Дарбыз' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
+    alfalfa:   { group: 'fodder', name: { ru: 'Люцерна', ky: 'Беде' }, temp: [4, 7, 15, 19], moist: 0.25, slope: [8, 15], sowTemp: 7 },
+    sainfoin:  { group: 'fodder', name: { ru: 'Эспарцет', ky: 'Эспарцет' }, temp: [2, 5, 12, 16], moist: 0.18, slope: [10, 20], sowTemp: 6 },
+    clover:    { group: 'fodder', name: { ru: 'Клевер', ky: 'Клевер' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 14], sowTemp: 6 },
+    strawberry:{ group: 'garden', perennial: true, name: { ru: 'Клубника', ky: 'Кулпунай' }, alias: ['земляника', 'садовая земляника'], temp: [4, 6.5, 12, 16], moist: 0.40, slope: [3, 8], sowTemp: 8 },
+    grapes:    { group: 'garden', perennial: true, name: { ru: 'Виноград', ky: 'Жүзүм' }, temp: [9, 11, 16, 20], moist: 0.25, slope: [6, 18], sowTemp: 10 },
+    cherry:    { group: 'garden', perennial: true, name: { ru: 'Вишня', ky: 'Чие' }, temp: [4, 6.5, 12, 16], moist: 0.30, slope: [8, 18], sowTemp: 5 },
+    sweetcherry:{ group: 'garden', perennial: true, name: { ru: 'Черешня', ky: 'Гилас' }, temp: [8, 10, 15, 19], moist: 0.32, slope: [8, 18], sowTemp: 7 },
+    pear:      { group: 'garden', perennial: true, name: { ru: 'Груша', ky: 'Алмурут' }, temp: [6, 8.5, 14, 18], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    plum:      { group: 'garden', perennial: true, name: { ru: 'Слива', ky: 'Кара өрүк' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    peach:     { group: 'garden', perennial: true, name: { ru: 'Персик', ky: 'Шабдалы' }, temp: [9.5, 11.5, 16, 20], moist: 0.30, slope: [8, 18], sowTemp: 7 },
+    walnut:    { group: 'garden', perennial: true, name: { ru: 'Грецкий орех', ky: 'Жаңгак' }, alias: ['орех'], temp: [8, 10, 15, 19], moist: 0.30, slope: [10, 25], sowTemp: 7 },
+    currant:   { group: 'garden', perennial: true, name: { ru: 'Смородина', ky: 'Карагат' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 15], sowTemp: 5 },
+    seabuckthorn:{ group: 'garden', perennial: true, name: { ru: 'Облепиха', ky: 'Чычырканак' }, temp: [0, 3, 10, 14], moist: 0.25, slope: [8, 20], sowTemp: 5 }
   },
 
   // Пригодность: ≥ 0,7 — подходит, ≥ 0,35 — с условиями; сухое место с поливом не выше 0,6

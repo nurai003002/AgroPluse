@@ -1,0 +1,9 @@
+{
+  "name": "agropulse-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API личного кабинета AgroPulse: регистрация, вход, сохранённые поля и культуры",
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": { "start": "node --disable-warning=ExperimentalWarning server.js" }
+}

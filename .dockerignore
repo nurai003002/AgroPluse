@@ -3,3 +3,4 @@ index.backup-*.html
 bot/node_modules
 bot/data
 bot/.env
+api/data

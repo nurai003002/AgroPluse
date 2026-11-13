@@ -13,7 +13,7 @@ cp bot/.env.example bot/.env
 nano bot/.env            # BOT_TOKEN=...
 
 docker compose up -d --build
-docker compose ps        # web — healthy, bot — running
+docker compose ps        # web и api — healthy, bot — running
 docker compose logs -f bot   # должно быть «AgroPulse-бот запущен: @my_agro_Pluse_bot»
 ```
 
@@ -32,6 +32,9 @@ docker compose up -d --build
 ```
 
 База пользователей бота и кэш данных NASA лежат в томе `agropulse_bot-data` и переживают обновления.
+Аккаунты личного кабинета, сохранённые поля и свои культуры — в SQLite-базе в томе `agropulse_api-data`
+(контейнер `api`, сайт ходит к нему по адресу `/api/`). Резервная копия:
+`docker compose exec api sh -c 'cp /app/data/agropulse.db /app/data/backup.db'` и `docker cp agropulse-api:/app/data/backup.db .`
 
 ## Домен и HTTPS
 
