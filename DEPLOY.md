@@ -5,8 +5,8 @@
 ## Первый запуск
 
 ```bash
-git clone https://github.com/nurai003002/AgroPluse.git
-cd AgroPluse
+git clone https://github.com/nurai003002/AgroPulse.git
+cd AgroPulse
 
 # Токен бота от @BotFather — только в этом файле, в git он не попадает
 cp bot/.env.example bot/.env
@@ -26,7 +26,7 @@ docker compose logs -f bot   # должно быть «AgroPulse-бот запу
 ## Обновление
 
 ```bash
-cd AgroPluse
+cd AgroPulse
 git pull
 docker compose up -d --build
 ```
