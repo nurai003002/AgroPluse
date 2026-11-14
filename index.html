@@ -733,6 +733,10 @@
   .day { border-radius: 16px; }
   .btn-draw { background: #FFF6DA; border-color: #F6DE96; }
   .map-card { border-radius: 30px; }
+  .suit-hint { margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--green-dark); background: #fff; border-radius: 12px; padding: 10px 12px; }
+  @media (min-width: 821px) {
+    .map-card { align-self: start; position: sticky; top: 90px; height: min(720px, calc(100vh - 110px)); min-height: 520px; }
+  }
 
   /* Данные NASA: шаги-кружки на линии */
   .pipeline { gap: 22px; }
@@ -811,6 +815,7 @@
     .shot-chip { left: 12%; top: 10%; font-size: 12px; }
     .shot-scale { left: 18%; bottom: 10%; }
     .h-daisy2 { display: none; }
+    .h-sprig { display: none; }
     .sec-deco, .sec-dots, .sec-daisy { display: none; }
     .foot-sprig { display: none; }
   }
@@ -882,9 +887,10 @@
     </nav>
     <div class="top-actions">
       <button type="button" class="account-btn" id="accountBtn"><span aria-hidden="true">👤</span><span id="accountName"></span></button>
-      <div class="lang" role="group" aria-label="Язык / Тил">
+      <div class="lang" role="group" aria-label="Язык / Тил / Language">
         <button type="button" data-lang="ru" aria-pressed="true">RU</button>
         <button type="button" data-lang="ky" aria-pressed="false">KG</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
       </div>
     </div>
   </div>
@@ -918,7 +924,7 @@
         <svg class="deco h-daisy2" aria-hidden="true"><use href="#d-daisy"/></svg>
         <span class="dots h-dots4" aria-hidden="true"></span>
         <div class="hero-shot">
-          <div id="heroMap" role="img" aria-label="Спутниковый снимок поля у Кемина"></div>
+          <div id="heroMap" role="img" aria-label="Спутниковый снимок поля у Кемина" data-i18n-aria="ariaHero"></div>
           <div class="shot-chip"><span class="rec" aria-hidden="true"></span><div><b data-i18n="shotTitle"></b><span data-i18n="shotSub"></span></div></div>
           <div class="shot-scale"><span data-i18n="zonesWeak"></span><span class="ramp"></span><span data-i18n="zonesStrong"></span></div>
         </div>
@@ -1115,7 +1121,7 @@
           <details class="more" id="sowDetails">
             <summary data-i18n="sowWhy"></summary>
             <p id="sowHint"></p>
-            <div class="chart-box"><canvas id="sowChart" aria-label="График"></canvas></div>
+            <div class="chart-box"><canvas id="sowChart" aria-label="График" data-i18n-aria="ariaChart"></canvas></div>
           </details>
         </div>
         <div class="card" id="weekCard">
@@ -1127,7 +1133,7 @@
       </div>
       <div class="card zones-card reveal" id="zonesCard">
         <div>
-          <svg class="zones-svg" id="zonesSvg" viewBox="0 0 100 100" role="img" aria-label="Карта участков поля"></svg>
+          <svg class="zones-svg" id="zonesSvg" viewBox="0 0 100 100" role="img" aria-label="Карта участков поля" data-i18n-aria="ariaZones"></svg>
           <div class="seg" role="group">
             <button type="button" data-zview="now" aria-pressed="true" data-i18n="zonesNow"></button>
             <button type="button" data-zview="change" aria-pressed="false" data-i18n="zonesChange"></button>
@@ -1287,6 +1293,8 @@
 /* ---------- Переводы интерфейса (RU / KG) ---------- */
 const I18N = {
   ru: {
+    ariaHero: 'Спутниковый снимок поля у Кемина', ariaChart: 'График начала сезона за 40 лет', ariaZones: 'Карта участков поля',
+    pageTitle: 'AgroPulse — спутник NASA подскажет, когда сеять',
     navIdea: 'Идея', navChannels: 'Как получит фермер', navDemo: 'Попробовать', navNasa: 'Откуда данные', navCost: 'Стоимость', navNext: 'Что дальше',
     heroBadge: '🛰️ Данные NASA для фермеров Кыргызстана',
     heroTitle: 'Спутник NASA подскажет фермеру, <em>где и когда сеять</em>',
@@ -1337,7 +1345,8 @@ const I18N = {
     smsTpl: 'AgroPulse {place}: {crop} — {suit}. {sow}. {risk}. Полив: {water}.',
     smsSuitGood: 'место подходит', smsSuitMid: 'можно, с условиями', smsSuitBad: 'место не подходит',
     smsSow: 'Сев {from}-{to}', smsSowCold: 'Для сева холодно',
-    smsFrost: '{day} заморозок {t}°C, укройте всходы', smsHeat: '{day} жара +{t}°C', smsDrought: 'засуха, нужен полив', smsOk: 'опасной погоды нет',
+    smsFrost: '{day} заморозок {t}°C, укройте всходы', smsFrostWinter: '{day} мороз {t}°C, укройте молодые деревья',
+    warnFrostWinter: 'Мороз до {t} °C {day}. Укройте молодые деревья и саженцы, слейте воду из шлангов и труб полива.', smsHeat: '{day} жара +{t}°C', smsDrought: 'засуха, нужен полив', smsOk: 'опасной погоды нет',
     demoKicker: 'Попробуйте сами',
     demoTitle: 'Выберите место — получите совет',
     demoHint: 'Найдите село, нажмите «Где я», кликните по карте или обведите границы своего поля. Цвет показывает, где культура вырастет хорошо; дома и вода не закрашиваются.',
@@ -1416,7 +1425,7 @@ const I18N = {
     ndviRed: 'Красный свет (отражено)', ndviNir: 'Инфракрасный свет (отражено)',
     missionHow: 'Как измеряет', missionGives: 'Что даёт фермеру', missionUsed: 'Где в AgroPulse',
     honestTitle: 'Честно: что в прототипе настоящее',
-    honestText: 'Настоящие: карта, поиск сёл и рельеф — высоты из открытых тайлов AWS Terrain Tiles, собранных в основном из NASA SRTM. Значения SMAP, MODIS и NASA POWER пока подготовлены заранее в формате NASA API, прогноз — тоже демо. Telegram-бот @my_agro_Pluse_bot уже работает на настоящих данных NASA POWER и прогнозе Open-Meteo; Telegram и SMS на этой странице — макеты с теми же текстами, SMS-шлюз запускаем на пилоте. Где пашня, а где дома и вода — по карте ESA WorldCover 10 м (2021).',
+    honestText: 'Настоящие: карта, поиск сёл и рельеф — высоты из открытых тайлов AWS Terrain Tiles, собранных в основном из NASA SRTM. Прогноз погоды на неделю — настоящий, от Open-Meteo. Значения SMAP, MODIS и NASA POWER пока подготовлены заранее в формате NASA API. Telegram-бот @my_agro_Pluse_bot уже работает на настоящих данных NASA POWER и прогнозе Open-Meteo; Telegram и SMS на этой странице — макеты с теми же текстами, SMS-шлюз запускаем на пилоте. Где пашня, а где дома и вода — по карте ESA WorldCover 10 м (2021).',
     costKicker: 'Сколько это стоит',
     costTitle: 'Для фермера — бесплатно',
     costHint: 'Мы специально выбрали самые дешёвые каналы, чтобы сервис работал без денег фермера.',
@@ -1513,9 +1522,12 @@ const I18N = {
     notField: 'Здесь дома или вода, а не поле — выберите участок с пашней.',
     smsNotField: 'AgroPulse {place}: здесь дома или вода, а не поле. Выберите участок с пашней.',
     sumNoField: 'Нет поля',
+    notFieldHint: '👉 Это центр села. Нажмите на поле рядом — на карте оно в цветной клетке — или выберите место из списка «Лучшие места» ниже.',
     days: n => pluralRu(n, 'день', 'дня', 'дней')
   },
   ky: {
+    ariaHero: 'Кемин жанындагы талаанын спутниктик сүрөтү', ariaChart: '40 жылдагы сезондун башталыш графиги', ariaZones: 'Талаа тилкелеринин картасы',
+    pageTitle: 'AgroPulse — NASA спутниги качан себүүнү айтып берет',
     navIdea: 'Идея', navChannels: 'Дыйканга кантип жетет', navDemo: 'Байкап көрүү', navNasa: 'Маалымат кайдан', navCost: 'Баасы', navNext: 'Андан ары',
     heroBadge: '🛰️ Кыргызстандын дыйкандары үчүн NASA маалыматтары',
     heroTitle: 'NASA спутниги дыйканга <em>кайда жана качан себүүнү</em> айтып берет',
@@ -1566,7 +1578,8 @@ const I18N = {
     smsTpl: 'AgroPulse {place}: {crop} — {suit}. {sow}. {risk}. Сугаруу: {water}.',
     smsSuitGood: 'жер ылайыктуу', smsSuitMid: 'шарттар менен болот', smsSuitBad: 'жер ылайыксыз',
     smsSow: 'Себүү {from}-{to}', smsSowCold: 'Себүүгө суук',
-    smsFrost: '{day} үшүк {t}°C, өнүмдөрдү жабыңыз', smsHeat: '{day} ысык +{t}°C', smsDrought: 'кургакчылык, сугаруу керек', smsOk: 'коркунучтуу аба ырайы жок',
+    smsFrost: '{day} үшүк {t}°C, өнүмдөрдү жабыңыз', smsFrostWinter: '{day} суук {t}°C, жаш дарактарды жабыңыз',
+    warnFrostWinter: '{day} {t} °C чейин суук. Жаш дарактарды жана көчөттөрдү жабыңыз, сугат шлангдары менен түтүктөрдөн сууну агызыңыз.', smsHeat: '{day} ысык +{t}°C', smsDrought: 'кургакчылык, сугаруу керек', smsOk: 'коркунучтуу аба ырайы жок',
     demoKicker: 'Өзүңүз байкап көрүңүз',
     demoTitle: 'Жерди тандаңыз — кеңеш алыңыз',
     demoHint: 'Айылды табыңыз, «Мен кайдамын» баскычын басыңыз, картаны басыңыз же талааңыздын чек арасын тартыңыз. Түс өсүмдүк кайда жакшы өсөрүн көрсөтөт; үйлөр жана суу боёлбойт.',
@@ -1645,7 +1658,7 @@ const I18N = {
     ndviRed: 'Кызыл жарык (чагылган)', ndviNir: 'Инфракызыл жарык (чагылган)',
     missionHow: 'Кантип өлчөйт', missionGives: 'Дыйканга эмне берет', missionUsed: 'AgroPulse’та кайда',
     honestTitle: 'Чынын айтсак: прототипте эмне чыныгы',
-    honestText: 'Чыныгы: карта, айылдарды издөө жана рельеф — бийиктиктер негизинен NASA SRTM маалыматынан түзүлгөн AWS Terrain Tiles ачык тайлдарынан алынат. SMAP, MODIS жана NASA POWER маанилери азырынча NASA API форматында алдын ала даярдалган, болжол да — демо. @my_agro_Pluse_bot Telegram-боту NASA POWER чыныгы маалыматтары жана Open-Meteo болжолу менен иштеп жатат; бул беттеги Telegram жана SMS — ошол эле тексттер менен макеттер, SMS-шлюз пилотто ишке киргизилет. Кайда айдоо жер, кайда үйлөр жана суу — ESA WorldCover 10 м (2021) картасы боюнча.',
+    honestText: 'Чыныгы: карта, айылдарды издөө жана рельеф — бийиктиктер негизинен NASA SRTM маалыматынан түзүлгөн AWS Terrain Tiles ачык тайлдарынан алынат. Бир жумалык аба ырайы болжолу — чыныгы, Open-Meteo’дон. SMAP, MODIS жана NASA POWER маанилери азырынча NASA API форматында алдын ала даярдалган. @my_agro_Pluse_bot Telegram-боту NASA POWER чыныгы маалыматтары жана Open-Meteo болжолу менен иштеп жатат; бул беттеги Telegram жана SMS — ошол эле тексттер менен макеттер, SMS-шлюз пилотто ишке киргизилет. Кайда айдоо жер, кайда үйлөр жана суу — ESA WorldCover 10 м (2021) картасы боюнча.',
     costKicker: 'Бул канча турат',
     costTitle: 'Дыйкан үчүн — акысыз',
     costHint: 'Кызмат дыйкандын акчасысыз иштеши үчүн эң арзан каналдарды атайын тандадык.',
@@ -1738,7 +1751,237 @@ const I18N = {
     notField: 'Бул жерде үйлөр же суу, талаа эмес — айдоо жери бар тилкени тандаңыз.',
     smsNotField: 'AgroPulse {place}: бул жерде үйлөр же суу, талаа эмес. Айдоо жери бар тилкени тандаңыз.',
     sumNoField: 'Талаа жок',
+    notFieldHint: '👉 Бул айылдын борбору. Жанындагы талааны басыңыз — картада ал түстүү клеткада — же төмөнкү «Эң жакшы жерлер» тизмесинен тандаңыз.',
     days: () => 'күн'
+  },
+  en: {
+    ariaHero: 'Satellite image of a field near Kemin', ariaChart: 'Season start over 40 years chart', ariaZones: 'Map of field patches',
+    pageTitle: 'AgroPulse — NASA satellites tell farmers when to sow',
+    navIdea: 'Idea', navChannels: 'How farmers get it', navDemo: 'Try it', navNasa: 'Data sources', navCost: 'Cost', navNext: 'What’s next',
+    heroBadge: '🛰️ NASA data for Kyrgyzstan’s farmers',
+    heroTitle: 'A NASA satellite tells the farmer <em>where and when to sow</em>',
+    heroText: 'A farmer names their village and gets simple advice in Kyrgyz or Russian: what will grow here, when to sow and when to protect crops from frost and drought. Via Telegram or plain SMS — even without internet.',
+    heroTry: 'Try it on the map', heroHow: 'How a farmer gets advice',
+    heroFact1: '🛰️ 4 NASA data sources', heroFact2: '💬 Telegram and SMS', heroFact3: '🆓 Free for farmers',
+    heroSms: '🌵 Field near Kemin: plants in the south-east have weakened — looks like drought. Water this patch first.',
+    shotTitle: 'Field near Kemin · 53 ha', shotSub: 'satellite image and crop health',
+    ideaKicker: 'Why it matters',
+    ideaTitle: 'The weather has changed, but the sowing calendar hasn’t',
+    ideaHint: 'Spring comes earlier, yet late frosts and droughts are still here. Being a week off can cost the whole harvest.',
+    storyName: 'Meet Asan, a farmer from Kemin (a made-up example)',
+    story1T: 'Before', story1: 'Asan sows the way his father did — by the old calendar. The agronomist is far away, and the village internet doesn’t always work.',
+    story2T: 'What went wrong', story2: 'Spring came early, Asan sowed — and three days later frost struck. The seedlings died; seeds and work were lost.',
+    story3T: 'With AgroPulse', story3: 'A day before the frost, an SMS arrives on his simple push-button phone: “Frost on Thursday — postpone sowing”. Asan waits two days and sows in a safe window.',
+    questionsTitle: 'AgroPulse answers a farmer’s three questions',
+    q1T: 'Where to plant?', q1: 'Grain, industrial crops, vegetables or orchards — the map shows where they will grow and suggests the best choice.',
+    q2T: 'When to sow?', q2: 'Using 40 years of NASA weather, we work out when the soil warms up enough for your crop this year.',
+    q3T: 'When to protect crops?', q3: 'We warn about frost, heat and drought, tell you whether to irrigate, and show where plants in the field are getting sick.',
+    chKicker: 'How a farmer gets advice',
+    chTitle: 'No apps — just Telegram or SMS',
+    chHint: 'Farmers don’t need to understand maps or satellites. They get a short message in their own language — only when it matters.',
+    liveNote: 'The messages below are built for “{place}” from the demo. Change the place or crop on the map — and they will change.',
+    tgStatus: 'bot',
+    tgTitle: 'Telegram — if there is internet',
+    tg1: 'The farmer finds the AgroPulse bot and sends a location or village name.',
+    tg2: 'The bot replies with advice and buttons: change place, change crop, turn on alerts.',
+    tg3: '🤖 Open the bot @my_agro_Pluse_bot →',
+    smsTitle: 'SMS — if there is no internet',
+    sms1: 'Any push-button phone will do.',
+    sms2: 'The village council agronomist or a cooperative signs the farmer up — nothing to set up. Or the farmer texts the village name.',
+    smsCount: 'Length: {c} {chars} · {n} SMS',
+    chars: n => (n === 1 ? 'character' : 'characters'),
+    whenTitle: 'When messages arrive',
+    when1: 'Before sowing starts — “time to sow”',
+    when2: '1–2 days before a frost',
+    when3: 'When the soil dries out and no rain is coming',
+    when4: 'Other days — silence, no spam',
+    webTitle: 'And this website is for agronomists and cooperatives',
+    web1: 'A district map, sowing dates and risks for all fields at once. The agronomist sees more and helps those without a phone.',
+    tgSuit: 'Place: {label} ({pct} %)',
+    tgSow: 'Sow: {from} — {to}',
+    tgSowCold: 'Sow: too cold for this crop',
+    tgWater: 'Irrigation: {label}',
+    tgSat: 'Crops on the satellite image: {label}',
+    tgBtn1: '📍 Another place', tgBtn2: '🌱 Another crop', tgBtn3: '🔔 Alerts: on',
+    w_soilOk: 'not needed', w_soilWaitRain: 'wait, rain is coming', w_soilWater: 'needed in the next 1–2 days', w_soilWait: 'in 2–3 days if there is no rain',
+    smsTpl: 'AgroPulse {place}: {crop} — {suit}. {sow}. {risk}. Irrigation: {water}.',
+    smsSuitGood: 'good place', smsSuitMid: 'possible, with care', smsSuitBad: 'not a good place',
+    smsSow: 'Sow {from}-{to}', smsSowCold: 'Too cold to sow',
+    smsFrost: 'frost {day} {t}°C, cover seedlings', smsFrostWinter: 'frost {day} {t}°C, cover young trees',
+    warnFrostWinter: 'Frost down to {t} °C {day}. Cover young trees and saplings, drain hoses and irrigation pipes.', smsHeat: 'heat {day} +{t}°C', smsDrought: 'drought, irrigate', smsOk: 'no dangerous weather',
+    demoKicker: 'Try it yourself',
+    demoTitle: 'Pick a place — get advice',
+    demoHint: 'Find a village, press “Where am I”, click the map or draw your field’s borders. Colour shows where the crop will grow well; houses and water stay uncoloured.',
+    searchLabel: 'Find a village',
+    searchPh: 'E.g. “Ivanovka”',
+    searchBtn: 'Find', searching: 'Searching…',
+    notFound: 'We couldn’t find that place. Try another name.',
+    searchError: 'Search is unavailable — no internet. Pick a place on the map.',
+    locate: 'Where am I', locating: 'Locating…',
+    locateError: 'Couldn’t get your location. Allow location access or pick a place on the map.',
+    cropLabel: 'Crop', presetLabel: 'Plot', presetGroup: 'Demo fields',
+    customOption: '📍 Point on the map',
+    customName: 'Point on the map',
+    area: 'Area', areaUnit: 'ha', coords: 'Coordinates', elevation: 'Elevation', elevUnit: 'm', slope: 'Slope',
+    customArea: '500 × 500 m plot',
+    suitTitle: 'Suitability for “{crop}”',
+    suitGood: 'Suitable', suitMid: 'Possible, with care', suitBad: 'Not suitable',
+    reasonOk: 'Enough warmth and moisture, flat terrain.',
+    reasonCold: 'Cool for this crop: elevation {elev} m, mean annual temperature {t} °C.',
+    reasonColdBad: 'Too cold for this crop: elevation {elev} m, mean annual temperature {t} °C.',
+    reasonHot: 'A bit warm: the crop likes it cool, the yield will be lower.',
+    reasonHotBad: 'Too hot: the crop grows poorly in this heat.',
+    reasonSteep: '{slope}° slope: hard for machinery, rain washes the soil away.',
+    reasonSteepBad: 'Slope too steep ({slope}°): not fit for ploughing.',
+    reasonDry: 'Little natural moisture ({m} %) — irrigation needed.',
+    topTitle: 'Best places on the map right now',
+    topHint: 'For “{crop}” in the visible area. Click to analyse a place.',
+    topEmpty: 'No suitable places in this area. Move or zoom out the map.',
+    topZoom: 'Zoom in to find places.',
+    topItem: '{dist} km {dir} of the map centre · {elev} m',
+    topHere: 'at the map centre · {elev} m',
+    dirs: ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'],
+    layer: 'Where to plant', satellite: 'Satellite',
+    statusLoading: 'Calculating terrain and climate…',
+    statusZoom: 'Zoom in — the layer shows from zoom level 8',
+    statusOffline: 'Terrain didn’t load — showing a simplified model',
+    howTerrain: 'Where does this data come from?',
+    adviceTitle: 'Advice for this place',
+    sumSuit: 'Place for “{crop}”', sumWater: 'Irrigation', sumSow: 'When to sow', sumRisk: 'Risks this week',
+    sumWaterSub: 'soil moisture {pct} % · SMAP satellite',
+    sumSowSub: 'when the soil warms to +{temp} °C',
+    sumTooCold: 'Too cold',
+    sumTooColdSub: 'the summer is too short',
+    sumNoRisk: 'No hazards', sumNoRiskSub: 'good days for field work',
+    sumMore: '{n} more',
+    dryDays: '{n} {days} without rain',
+    ndviPoor: 'Poor', ndviMid: 'Fair', ndviGood: 'Good',
+    tgNdviPoor: 'plants are stressed, inspect the field', tgNdviMid: 'growing, but not at full strength', tgNdviGood: 'plants are healthy',
+    sowWhy: 'Why these dates? Show 40 years of observations',
+    sowHint: 'Each dot is the day when, in that year, the mean daily temperature rose steadily above +{temp} °C (NASA POWER, 1985–2025). The threshold depends on the crop.',
+    chartSeries: 'Crossing +{temp} °C', chartTrend: 'Trend',
+    sowEarlier: 'The season starts <b>{n} {days}</b> earlier than 40 years ago.',
+    sowLater: 'The season starts <b>{n} {days}</b> later than 40 years ago.',
+    sowSame: 'Over 40 years the season start has barely changed.',
+    sowWindow: 'Sow “{crop}”: <b>{from} — {to}</b>',
+    sowNote: 'The window follows the trend for {year}: the date of crossing +{temp} °C plus {warm} days for the soil to warm up, lasting {len} {lenDays}.',
+    sowTooCold: 'It’s too cold here for “{crop}”: steady warmth above <b>+{temp} °C</b> comes late or not every year, and the summer is too short for the crop to ripen. Choose a place below or another crop.',
+    weekTitle: '🌦️ Weather and risks this week',
+    today: 'Today',
+    riskFrost: 'Frost', riskHeat: 'Heat', riskDrought: 'Drought', riskNone: 'No risk',
+    mm: 'mm',
+    warnFrost: 'Night frost possible {day} (down to {t} °C). Postpone sowing and cover seedlings.',
+    warnHeat: 'Heat up to {t} °C {day}. Irrigate early in the morning or in the evening.',
+    warnDrought: '{n} days in a row without rain on dry soil — drought risk. Plan irrigation.',
+    warnNone: 'No hazardous weather expected. Good days for field work.',
+    nasaKicker: 'Where the advice comes from',
+    nasaTitle: 'Satellites see what can’t be seen from the ground',
+    nasaHint: 'Soil moisture, leaf health, terrain and 40 years of weather. AgroPulse brings it together and translates it into plain language.',
+    pipe1T: 'A satellite flies over', pipe1: 'At about 700 km up — over your field every 1–3 days, in any weather.',
+    pipe2T: 'It measures the invisible', pipe2: 'Infrared light from leaves, microwaves from moist soil, terrain height.',
+    pipe3T: 'AgroPulse calculates', pipe3: 'Turns measurements into clear conclusions: the place fits, the soil is warm, the soil is dry.',
+    pipe4T: 'The farmer gets an SMS', pipe4: '“Sow from April 3”, “frost on Thursday”, “no irrigation needed”.',
+    ndviDemoTitle: 'How a satellite sees plant health',
+    ndviDemoText: 'A living leaf absorbs red light and strongly reflects infrared, which our eyes can’t see — but the satellite camera can. A dry plant reflects both almost equally. Move the slider:',
+    ndviDry: 'Dry', ndviHealthy: 'Healthy',
+    ndviRed: 'Red light (reflected)', ndviNir: 'Infrared light (reflected)',
+    missionHow: 'How it measures', missionGives: 'What it gives the farmer', missionUsed: 'Used in AgroPulse for',
+    honestTitle: 'Honestly: what is real in the prototype',
+    honestText: 'Real: the map, village search and terrain — elevations from open AWS Terrain Tiles, built mostly from NASA SRTM. The weekly weather forecast is real, from Open-Meteo. SMAP, MODIS and NASA POWER values are prepared in advance in NASA API format for now. The Telegram bot @my_agro_Pluse_bot already runs on real NASA POWER data and the Open-Meteo forecast; the Telegram and SMS on this page are mock-ups with the same texts, and the SMS gateway launches in the pilot. Cropland versus houses and water comes from the ESA WorldCover 10 m map (2021).',
+    costKicker: 'What it costs',
+    costTitle: 'Free for the farmer',
+    costHint: 'We deliberately chose the cheapest channels so the service works without farmers paying.',
+    cost1T: 'For the farmer', cost1V: '0 som', cost1: 'Incoming SMS and Telegram are free. No smartphone or mobile internet needed.',
+    cost2T: 'Telegram bot', cost2V: '0 som', cost2: 'The Telegram Bot API is free, however many messages there are.',
+    cost3T: 'SMS', cost3V: 'one SMS bundle', cost3: 'We pay for a monthly SMS bundle from the operator, not for each message.',
+    cost4T: 'NASA data', cost4V: '0 som', cost4: 'All NASA data is open and free. Only a small server is needed.',
+    flowTitle: 'How to send SMS without expensive services',
+    flow1: 'The AgroPulse server calculates advice for each farmer',
+    flow2: 'It passes the text to an Android phone with a SIM card',
+    flow3: 'The phone sends SMS to farmers like ordinary messages',
+    whoPays: '💡 Who pays for SMS when there are many farmers: cooperatives and agricultural advisory services, mobile operators’ social programmes, farmer support programmes. During the pilot — the team itself.',
+    nextKicker: 'What’s next',
+    nextTitle: 'From prototype to fields',
+    n1Tag: 'Now', n1T: 'Working prototype', n1: 'A “where to plant” map, sowing dates and risks, and a working Telegram bot with morning alerts.',
+    n2Tag: 'Spring 2027', n2T: 'Pilot in Chüy Region', n2: 'Bot and SMS gateway for 20–30 farmers. We compare our advice with what happened in the field.',
+    n3Tag: 'Later', n3T: 'The whole country', n3: 'More crops, daily SMAP and MODIS data, voice messages for those who find reading hard.',
+    footer: 'AgroPulse — NASA satellite data as simple advice for Kyrgyzstan’s farmers.',
+    mapFallback: 'The map didn’t load — check your internet connection.',
+    chartFallback: 'The chart didn’t load — check your internet connection.',
+    weekShort: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    weekIn: ['on Monday', 'on Tuesday', 'on Wednesday', 'on Thursday', 'on Friday', 'on Saturday', 'on Sunday'],
+    when5: 'When the satellite notices plants weakening in part of the field',
+    cropGroups: { grain: 'Grains', industrial: 'Industrial crops', veg: 'Vegetables, melons and legumes', fodder: 'Fodder grasses', garden: 'Orchards, grapes and berries', mine: 'My crops' },
+    ownLabel: 'Your crop isn’t listed? Type it', ownPh: 'strawberry, grapes…', ownBtn: 'Choose',
+    ownEmpty: 'Type the crop name.',
+    ownFound: 'It’s in the list: “{crop}” — already calculated.',
+    ownQuizTitle: '“{name}” isn’t in the list. Answer 3 questions and we’ll calculate it.',
+    ownQType: 'How is it planted?', ownSeed: '🌱 Seeds or seedlings', ownPlant: '🌳 Saplings — grows for many years',
+    ownQWarm: 'How much warmth does it need?', ownCold: '❄️ Cold-hardy', ownMid: '🌤️ Medium', ownWarmV: '☀️ Warmth-loving',
+    ownQWater: 'How much water does it need?', ownLow: '🌵 Little', ownWMid: '💧 Medium', ownHigh: '🌊 A lot',
+    ownAdd: 'Add and calculate', ownCancel: 'Cancel',
+    ownSavedLocal: '“{crop}” was added in this browser. Sign in and it will be in your account on any device.',
+    ownSavedAcc: '“{crop}” was added to your account.',
+    saveField: '💾 Save field to my account', saveUpdate: '💾 Save changes', saved: '✓ Field saved', saving: 'Saving…',
+    saveOk: 'Done. All your fields are in your account (button at the top).',
+    fieldDefaultName: 'My field',
+    accLogin: 'Sign in',
+    authLoginTab: 'Sign in', authRegTab: 'Sign up', authTitleLogin: 'Sign in to your account', authTitleReg: 'Sign up',
+    authName: 'Your name', authLogin: 'Phone or email', authLoginPh: '0555 123 456 or name@mail.kg', authPass: 'Password — at least 6 characters',
+    authSubmitLogin: 'Sign in', authSubmitReg: 'Create account', authWait: 'One moment…',
+    authNeedSave: 'Sign in or sign up — and the field will be saved to your account.',
+    err_name: 'Please enter your name.', err_login: 'Enter a phone number (0555 123 456) or email.', err_password: 'Password must be at least 6 characters.',
+    err_exists: 'This phone or email is already registered — sign in.', err_wrong: 'Wrong phone, email or password.',
+    err_too_many: 'Too many attempts. Wait 15 minutes.', err_limit: 'You’ve reached the limit of saved items.',
+    err_offline: 'Your account is unavailable right now — try later.', err_server: 'Something went wrong — please try again.',
+    cabTitle: 'My account', cabFields: 'My fields', cabCrops: 'My crops',
+    cabNoFields: 'Nothing here yet. Pick a place or draw a field on the map and press “Save field to my account”.',
+    cabNoCrops: 'No crops of your own yet — you can add them below the “What grows best here” list.',
+    cabOpen: 'Open', cabDelete: 'Delete', cabConfirm: 'Really delete?', cabRename: 'Field name',
+    cabDrawn: '{ha} ha, own borders', cabPoint: 'point on the map',
+    cabTypeSeed: 'sown', cabTypePlant: 'saplings', cabWarm: { cold: 'cold-hardy', mid: 'medium warmth', warm: 'warmth-loving' },
+    cabWater: { low: 'little water', mid: 'medium water', high: 'a lot of water' },
+    logout: 'Sign out',
+    bestTitle: 'What grows best here (click to choose)',
+    tgBest: 'Also suitable: {list}',
+    sowTitleSeed: '🌱 When to sow', sowTitlePlant: '🌳 When to plant saplings',
+    sowWindowPlant: 'Plant “{crop}” saplings: <b>{from} — {to}</b>',
+    sumPlant: 'When to plant', smsPlant: 'Plant {from}-{to}', tgPlant: 'Plant saplings: {from} — {to}',
+    zonesTitle: '🔍 Where plants in the field are sick',
+    zonesHint: 'The Landsat satellite images the field in 30 m patches. We compare with the image from 16 days ago and look for spots where plants became weaker than the rest.',
+    zonesNow: 'Now', zonesChange: 'Change over 16 days',
+    zonesFound: 'Plants weakened on <b>{pct} % of the field</b> (≈ {ha} ha) — {where}.',
+    zonesNone: 'No sick patches visible: plants are developing evenly across the field.',
+    zoneCauseDry: 'Looks like drought: the soil is dry ({soil} %). Water this patch first.',
+    zoneCausePest: 'The soil is moist, so it’s not about water. Disease or pests are possible: inspect the patch in the coming days.',
+    zoneCauseSlope: 'The patch is on a slope: water runs off fast and soil may have washed away. Inspect and reseed if needed.',
+    zonesShowMap: '🗺️ Show on the map',
+    howLink2: 'How the satellite sees this →',
+    zonesWeak: 'weak', zonesStrong: 'healthy', zonesDamaged: 'weakened in 16 days',
+    zonesWorse: 'worse', zonesSame: 'no change', zonesBetter: 'better',
+    zonesCenter: 'in the centre of the field',
+    zonesParts: ['in the north', 'in the north-east', 'in the east', 'in the south-east', 'in the south', 'in the south-west', 'in the west', 'in the north-west'],
+    tgZones: 'Plants weakened on {pct} % of the field ({where}) — inspect',
+    smsZones: '{pct}% of field weakened, inspect',
+    drawStart: '✏️ Own borders', drawStop: '✖ Cancel',
+    drawNote: 'Put points on the corners of your field — we’ll calculate exactly that field.',
+    drawHint: 'Click the field’s corners. Finish with a double click or by clicking the first point. Cancel — Esc.',
+    drawnArea: '{ha} ha · your borders',
+    drawEdit: 'You can drag the field’s corners right on the map — everything will be recalculated.',
+    landTitle: 'What’s on this land — ESA WorldCover image, 10 m',
+    landLoading: 'Checking the image: where is cropland and where are houses…',
+    lcCrop: 'cropland', lcOther: 'pasture, shrubs, forest', lcBuilt: 'houses and buildings', lcWater: 'water',
+    landWarn: 'There are buildings inside the borders ({built} %) — they can’t be sown.',
+    reasonBuilt: 'Mostly houses and buildings here ({built} %) — this is not a field.',
+    reasonWater: 'This is water — not a field.',
+    legendNone: 'no colour — houses and water',
+    statusNoLand: 'Land cover map unavailable — houses aren’t excluded yet',
+    zonesBuilt: 'buildings — not counted',
+    notField: 'Houses or water here, not a field — choose a plot with cropland.',
+    smsNotField: 'AgroPulse {place}: houses or water here, not a field. Choose a plot with cropland.',
+    sumNoField: 'No field',
+    notFieldHint: '👉 This is the village centre. Click a field nearby — it’s in a coloured square on the map — or pick a place from the “Best places” list below.',
+    days: n => (n === 1 ? 'day' : 'days')
   }
 };
 
@@ -1784,7 +2027,7 @@ function pluralRu(n, one, few, many) {
 }
 const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
 // Десятичная запятая и настоящий знак минуса
-const fmtNum = (v, d = 0) => v.toFixed(d).replace('.', ',').replace('-', '−');
+const fmtNum = (v, d = 0) => (state.lang === 'en' ? v.toFixed(d) : v.toFixed(d).replace('.', ',')).replace('-', '−');
 const fmtSigned = (v, d = 0) => (v > 0 ? '+' : '') + fmtNum(v, d);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -1793,7 +2036,8 @@ const powerKey = d => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getU
 const keyToDate = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8)));
 const isoToDate = s => new Date(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)));
 const fmtDate = d => pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
-const fmtDM = d => pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1);
+const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtDM = d => (state.lang === 'en' ? EN_MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate() : pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1));
 // День года -> «ДД.ММ» (берём невисокосный год как шаблон)
 const doyToDM = doy => fmtDM(new Date(Date.UTC(2025, 0, Math.round(doy))));
 const weekdayIdx = d => (d.getUTCDay() + 6) % 7; // 0 = понедельник
@@ -2089,6 +2333,7 @@ const suitLabel = cls => t('suit' + capitalize(cls));
    Чтобы подключить реальные данные, достаточно заменить тело методов
    на fetch — формат ответа уже совпадает с NASA POWER API.
    ===================================================================== */
+const forecastCache = new Map();
 const DataSource = {
   // Суточная температура T2M за 1985–2025.
   // Реальный запрос:
@@ -2102,10 +2347,28 @@ const DataSource = {
     }
     return state.climateCache[key];
   },
-  // Прогноз на 7 дней (T2M_MIN, T2M_MAX, PRECTOTCORR).
-  // NASA POWER прогнозов не даёт — в рабочей версии сюда подключается погодная модель (например, GFS).
+  // Прогноз на 7 дней (T2M_MIN, T2M_MAX, PRECTOTCORR). NASA POWER прогнозов не даёт —
+  // берём настоящий прогноз Open-Meteo (как и бот); без интернета — демо-прогноз.
   async forecast(field) {
-    return toPowerSeries(CONFIG.demoDate, mocksFor(field).forecast);
+    const key = field.lat.toFixed(2) + ',' + field.lon.toFixed(2);
+    const hit = forecastCache.get(key);
+    if (hit && Date.now() - hit.at < 3 * 3600e3) return hit.data;
+    try {
+      const j = await fetchJson(CONFIG.forecastUrl + '?latitude=' + field.lat.toFixed(3) + '&longitude=' + field.lon.toFixed(3) +
+        '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FBishkek&forecast_days=7', 7000);
+      const d = j.daily;
+      if (!d?.time?.length || d.temperature_2m_max.some(v => v == null)) throw new Error('empty forecast');
+      const data = toPowerSeries(d.time[0], {
+        T2M_MIN: d.temperature_2m_min.map(Math.round),
+        T2M_MAX: d.temperature_2m_max.map(Math.round),
+        PRECTOTCORR: d.precipitation_sum.map(v => Math.round((v || 0) * 10) / 10)
+      });
+      forecastCache.set(key, { at: Date.now(), data });
+      return data;
+    } catch (e) {
+      console.warn('Прогноз Open-Meteo недоступен, показываем демо:', e.message);
+      return toPowerSeries(CONFIG.demoDate, mocksFor(field).forecast);
+    }
   },
   // Влажность корневого слоя SMAP L4 (sm_rootzone_wetness, 0–1)
   async soil(field) { return mocksFor(field).soil; },
@@ -2189,7 +2452,9 @@ function computeSowing(climate, threshold) {
   if (years.length < (y1 - y0 + 1) / 2) return { tooCold: true, years, doys, threshold };
   const trend = linearTrend(years, doys);
   const shift = Math.round(trend.at(y0) - trend.at(y1)); // > 0 — сезон стал раньше
-  const targetYear = isoToDate(CONFIG.demoDate).getUTCFullYear();
+  // Срок сева — на ближайшую весну: со второй половины года считаем уже на следующий
+  const now = new Date();
+  const targetYear = now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear();
   const start = trend.at(targetYear) + CONFIG.sowing.soilWarmupDays;
   return { years, doys, trend, shift, targetYear, threshold, from: start, to: start + CONFIG.sowing.windowDays };
 }
@@ -2221,10 +2486,12 @@ function buildWarnings(days) {
   const L = I18N[state.lang];
   const warns = [];
   const frost = days.find(d => d.risks.includes('frost'));
+  // С ноября по февраль всходов нет — советуем беречь сады, озимые и полив
+  const winter = frost && [10, 11, 0, 1].includes(frost.date.getUTCMonth());
   if (frost) warns.push({
-    type: 'frost', icon: '❄️', label: t('riskFrost'),
+    type: 'frost', icon: '❄️', label: t('riskFrost'), winter,
     date: frost.date, temp: frost.tmin,
-    text: t('warnFrost', { day: L.weekIn[weekdayIdx(frost.date)], t: fmtNum(frost.tmin) }),
+    text: t(winter ? 'warnFrostWinter' : 'warnFrost', { day: L.weekIn[weekdayIdx(frost.date)], t: fmtNum(frost.tmin) }),
     sub: `${L.weekIn[weekdayIdx(frost.date)]}, ${fmtNum(frost.tmin)} °C`
   });
   const heatDays = days.filter(d => d.risks.includes('heat'));
@@ -2368,9 +2635,11 @@ function changeColor(d) {
    ОТРИСОВКА БЛОКОВ
    ===================================================================== */
 function renderStatic() {
-  document.documentElement.lang = state.lang === 'ky' ? 'ky' : 'ru';
+  document.documentElement.lang = state.lang;
+  document.title = t('pageTitle');
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
   $('heroTitle').innerHTML = t('heroTitle');
 
@@ -2428,7 +2697,8 @@ function renderPoint(field, r) {
       <span class="badge ${SUIT_TONE[s.cls]}">${suitLabel(s.cls)}</span>
     </div>
     <div class="suit-bar"><i style="width:${Math.max(3, s.score * 100)}%;background:${SUIT_COLOR[s.cls]}"></i></div>
-    <p class="suit-reason">${suitText(s, r.env, field.land)}</p>`;
+    <p class="suit-reason">${suitText(s, r.env, field.land)}</p>
+    ${r.notField ? `<p class="suit-hint">${t('notFieldHint')}</p>` : ''}`;
   renderLand(field);
   $('bestCrops').parentElement.hidden = r.notField;
   const best = r.best.some(b => b.id === state.cropId) ? r.best : [...r.best, { id: state.cropId, s: r.suit }];
@@ -2474,10 +2744,10 @@ function renderSummary(r) {
       value: `${Math.round(r.suit.score * 100)} % · ${suitLabel(r.suit.cls)}`, sub: suitText(r.suit, r.env, fieldById(state.fieldId).land) },
     { href: '#sowCard', icon: r.crop.perennial ? '🌳' : '🌱', label: t(r.crop.perennial ? 'sumPlant' : 'sumSow'), ...sowTile },
     { href: '#weekCard', icon: w.icon, label: t('sumRisk'), cls: riskCls, value: w.label + more, sub: w.sub },
-    { href: '#nasa-smap', icon: '💧', label: t('sumWater'), cls: r.advice.cls,
-      value: capitalize(waterShort(r.advice)), sub: t('sumWaterSub', { pct: r.pct }) },
+    { href: '#nasa-smap', icon: '💧', label: t('sumWater'), cls: r.notField ? 'bad' : r.advice.cls,
+      value: r.notField ? t('sumNoField') : capitalize(waterShort(r.advice)), sub: r.notField ? t('notField') : t('sumWaterSub', { pct: r.pct }) },
     { href: '#zonesCard', icon: '🔍', label: t('zonesTitle').replace('🔍 ', ''), cls: r.notField ? 'bad' : z.cells.some(c => c.damaged) ? 'bad' : 'good',
-      value: z.cells.some(c => c.damaged) ? `${zonesPct(z)} % · ≈ ${fmtNum(z.ha, z.ha < 10 ? 1 : 0)} ${t('areaUnit')}` : '0 %',
+      value: r.notField ? t('sumNoField') : z.cells.some(c => c.damaged) ? `${zonesPct(z)} % · ≈ ${fmtNum(z.ha, z.ha < 10 ? 1 : 0)} ${t('areaUnit')}` : '0 %',
       sub: r.notField ? t('notField') : z.cells.some(c => c.damaged) ? capitalize(zonesWhere(z)) : t('zonesNone') }
   ];
   $('summaryGrid').innerHTML = tiles.map(x => `
@@ -2498,7 +2768,7 @@ function smsText(field, r) {
   const w = r.warns[0];
   const sow = s.tooCold ? t('smsSowCold') : t(r.crop.perennial ? 'smsPlant' : 'smsSow', { from: doyToDM(s.from), to: doyToDM(s.to) });
   const zones = r.zones.cells.some(c => c.damaged) ? ' ' + t('smsZones', { pct: zonesPct(r.zones) }) + '.' : '';
-  const risk = t('sms' + capitalize(w.type), { day: w.date ? L.weekShort[weekdayIdx(w.date)] : '', t: w.temp != null ? fmtNum(w.temp) : '' });
+  const risk = t('sms' + capitalize(w.type) + (w.winter ? 'Winter' : ''), { day: w.date ? L.weekShort[weekdayIdx(w.date)] : '', t: w.temp != null ? fmtNum(w.temp) : '' });
   return t('smsTpl', {
     place: placeName(field), crop: r.crop.name[state.lang].toLowerCase(),
     suit: t('smsSuit' + capitalize(r.suit.cls)), sow, risk: capitalize(risk), water: waterShort(r.advice)
@@ -2731,7 +3001,7 @@ function renderNdviDemo() {
   $('valRed').textContent = red + ' %';
   $('valNir').textContent = nir + ' %';
   $('ndviFormula').innerHTML = `
-    <code>NDVI = (ИК − К) / (ИК + К) = (${nir} − ${red}) / (${nir} + ${red}) = <b>${fmtNum(ndvi, 2)}</b></code>
+    <code>${state.lang === 'en' ? 'NDVI = (NIR − R) / (NIR + R)' : 'NDVI = (ИК − К) / (ИК + К)'} = (${nir} − ${red}) / (${nir} + ${red}) = <b>${fmtNum(ndvi, 2)}</b></code>
     <span class="badge ${cls.tone}">${t('ndvi' + cls.key)}</span>`;
 }
 
@@ -3115,7 +3385,7 @@ async function selectPolygon(ring, { keepPlace = false } = {}) {
 async function reverseName(lat, lon) {
   try {
     const j = await fetchJson('https://nominatim.openstreetmap.org/reverse?format=json&zoom=14' +
-      '&lat=' + lat.toFixed(5) + '&lon=' + lon.toFixed(5) + '&accept-language=' + (state.lang === 'ky' ? 'ky,ru' : 'ru'), 8000);
+      '&lat=' + lat.toFixed(5) + '&lon=' + lon.toFixed(5) + '&accept-language=' + ({ ky: 'ky,ru', en: 'en,ru' }[state.lang] || 'ru'), 8000);
     const a = j.address || {};
     return a.village || a.town || a.city || a.hamlet || a.suburb || a.county || a.state || null;
   } catch (e) { return null; }
@@ -3200,7 +3470,7 @@ const ownCrops = () => (state.account ? state.account.crops : state.localCrops);
 function ownCropConfig(c) {
   const w = OWN_WARMTH[c.warmth] || OWN_WARMTH.mid;
   return {
-    group: 'mine', own: true, perennial: !!c.perennial, name: { ru: c.name, ky: c.name },
+    group: 'mine', own: true, perennial: !!c.perennial, name: { ru: c.name, ky: c.name, en: c.name },
     temp: w.temp, sowTemp: w.sowTemp, moist: OWN_WATER[c.water] ?? OWN_WATER.mid, slope: c.perennial ? [8, 18] : [4, 10]
   };
 }
@@ -3227,7 +3497,7 @@ function saveLocalCrops() {
 function findCrop(q) {
   const n = normName(q);
   const ids = Object.keys(CONFIG.crops);
-  const names = id => { const c = CONFIG.crops[id]; return [c.name.ru, c.name.ky, ...(c.alias || [])].map(normName); };
+  const names = id => { const c = CONFIG.crops[id]; return [c.name.ru, c.name.ky, c.name.en, ...(c.alias || [])].filter(Boolean).map(normName); };
   const exact = ids.find(id => names(id).includes(n));
   if (exact || n.length < 4) return exact || null;
   const near = ids.filter(id => names(id).some(x => x.split(' ').some(w => w.startsWith(n)) || n.startsWith(x)));
@@ -3565,7 +3835,7 @@ async function searchPlace(q) {
   btn.disabled = true;
   try {
     const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1' +
-      '&viewbox=' + CONFIG.search.viewbox + '&accept-language=' + (state.lang === 'ky' ? 'ky,ru' : 'ru') +
+      '&viewbox=' + CONFIG.search.viewbox + '&accept-language=' + ({ ky: 'ky,ru', en: 'en,ru' }[state.lang] || 'ru') +
       '&q=' + encodeURIComponent(q);
     const res = await fetchJson(url, 10000);
     if (!res.length) { msg.className = 'form-msg error'; msg.textContent = t('notFound'); return; }
@@ -3696,6 +3966,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const CONFIG = {
   // Дата «сегодня» для демо (весна — время сева). Подставьте new Date().toISOString().slice(0,10) для текущей даты.
   demoDate: '2026-04-20',
+  forecastUrl: 'https://api.open-meteo.com/v1/forecast',
   climateYears: [1985, 2025],
 
   power: {
@@ -3735,48 +4006,48 @@ const CONFIG = {
   //   sowTemp — порог среднесуточной температуры для начала сева
   //   group — группа в списке; perennial — многолетняя (сажают саженцы, а не сеют)
   crops: {
-    wheat:     { group: 'grain', name: { ru: 'Яровая пшеница', ky: 'Жаздык буудай' }, temp: [4.5, 7.5, 13, 17], moist: 0.28, slope: [5, 12], sowTemp: 5 },
-    barley:    { group: 'grain', name: { ru: 'Ячмень', ky: 'Арпа' }, temp: [3, 6, 12, 16], moist: 0.22, slope: [6, 14], sowTemp: 5 },
-    corn:      { group: 'grain', name: { ru: 'Кукуруза', ky: 'Жүгөрү' }, temp: [8.5, 10.5, 15, 20], moist: 0.40, slope: [3, 8], sowTemp: 10 },
-    beet:      { group: 'industrial', name: { ru: 'Сахарная свёкла', ky: 'Кант кызылчасы' }, temp: [7.5, 9.5, 14, 18], moist: 0.42, slope: [3, 7], sowTemp: 6 },
-    sunflower: { group: 'industrial', name: { ru: 'Подсолнечник', ky: 'Күн карама' }, temp: [7, 9, 15, 20], moist: 0.25, slope: [4, 10], sowTemp: 8 },
-    cotton:    { group: 'industrial', name: { ru: 'Хлопок', ky: 'Пахта' }, temp: [11, 13, 18, 22], moist: 0.40, slope: [2, 6], sowTemp: 12 },
-    potato:    { group: 'veg', name: { ru: 'Картофель', ky: 'Картошка' }, temp: [2.5, 5, 10, 14], moist: 0.38, slope: [4, 9], sowTemp: 7 },
-    beans:     { group: 'veg', name: { ru: 'Фасоль', ky: 'Төө буурчак' }, temp: [7, 9, 14, 18], moist: 0.35, slope: [5, 10], sowTemp: 10 },
-    raspberry: { group: 'garden', perennial: true, name: { ru: 'Малина', ky: 'Малина' }, temp: [4, 6.5, 11, 15], moist: 0.40, slope: [6, 15], sowTemp: 5 },
-    apple:     { group: 'garden', perennial: true, name: { ru: 'Яблоня', ky: 'Алма' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
-    apricot:   { group: 'garden', perennial: true, name: { ru: 'Абрикос', ky: 'Өрүк' }, temp: [8.5, 10.5, 15, 19], moist: 0.25, slope: [8, 20], sowTemp: 6 },
+    wheat:     { group: 'grain', name: { ru: 'Яровая пшеница', ky: 'Жаздык буудай', en: 'Spring wheat' }, temp: [4.5, 7.5, 13, 17], moist: 0.28, slope: [5, 12], sowTemp: 5 },
+    barley:    { group: 'grain', name: { ru: 'Ячмень', ky: 'Арпа', en: 'Barley' }, temp: [3, 6, 12, 16], moist: 0.22, slope: [6, 14], sowTemp: 5 },
+    corn:      { group: 'grain', name: { ru: 'Кукуруза', ky: 'Жүгөрү', en: 'Maize' }, temp: [8.5, 10.5, 15, 20], moist: 0.40, slope: [3, 8], sowTemp: 10 },
+    beet:      { group: 'industrial', name: { ru: 'Сахарная свёкла', ky: 'Кант кызылчасы', en: 'Sugar beet' }, temp: [7.5, 9.5, 14, 18], moist: 0.42, slope: [3, 7], sowTemp: 6 },
+    sunflower: { group: 'industrial', name: { ru: 'Подсолнечник', ky: 'Күн карама', en: 'Sunflower' }, temp: [7, 9, 15, 20], moist: 0.25, slope: [4, 10], sowTemp: 8 },
+    cotton:    { group: 'industrial', name: { ru: 'Хлопок', ky: 'Пахта', en: 'Cotton' }, temp: [11, 13, 18, 22], moist: 0.40, slope: [2, 6], sowTemp: 12 },
+    potato:    { group: 'veg', name: { ru: 'Картофель', ky: 'Картошка', en: 'Potato' }, temp: [2.5, 5, 10, 14], moist: 0.38, slope: [4, 9], sowTemp: 7 },
+    beans:     { group: 'veg', name: { ru: 'Фасоль', ky: 'Төө буурчак', en: 'Beans' }, temp: [7, 9, 14, 18], moist: 0.35, slope: [5, 10], sowTemp: 10 },
+    raspberry: { group: 'garden', perennial: true, name: { ru: 'Малина', ky: 'Малина', en: 'Raspberry' }, temp: [4, 6.5, 11, 15], moist: 0.40, slope: [6, 15], sowTemp: 5 },
+    apple:     { group: 'garden', perennial: true, name: { ru: 'Яблоня', ky: 'Алма', en: 'Apple' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    apricot:   { group: 'garden', perennial: true, name: { ru: 'Абрикос', ky: 'Өрүк', en: 'Apricot' }, temp: [8.5, 10.5, 15, 19], moist: 0.25, slope: [8, 20], sowTemp: 6 },
     // Расширенный справочник: требования — по агрономическим нормам для долин Кыргызстана (оценка для прототипа)
-    oats:      { group: 'grain', name: { ru: 'Овёс', ky: 'Сулу' }, temp: [2.5, 5, 11, 15], moist: 0.30, slope: [6, 14], sowTemp: 5 },
-    rye:       { group: 'grain', name: { ru: 'Рожь', ky: 'Кара буудай' }, temp: [1, 4, 11, 15], moist: 0.22, slope: [6, 15], sowTemp: 5 },
-    rice:      { group: 'grain', name: { ru: 'Рис', ky: 'Күрүч' }, temp: [10, 12, 17, 22], moist: 0.60, slope: [1, 3], sowTemp: 13 },
-    buckwheat: { group: 'grain', name: { ru: 'Гречиха', ky: 'Гречка' }, alias: ['гречка'], temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 12], sowTemp: 10 },
-    tobacco:   { group: 'industrial', name: { ru: 'Табак', ky: 'Тамеки' }, temp: [10, 12, 17, 21], moist: 0.38, slope: [3, 8], sowTemp: 15 },
-    soy:       { group: 'veg', name: { ru: 'Соя', ky: 'Соя' }, temp: [8, 10, 15, 19], moist: 0.40, slope: [3, 8], sowTemp: 12 },
-    peas:      { group: 'veg', name: { ru: 'Горох', ky: 'Буурчак' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 10], sowTemp: 5 },
-    chickpea:  { group: 'veg', name: { ru: 'Нут', ky: 'Нокот' }, temp: [8, 10, 16, 20], moist: 0.18, slope: [4, 10], sowTemp: 8 },
-    tomato:    { group: 'veg', name: { ru: 'Томаты', ky: 'Помидор' }, alias: ['помидоры', 'помидор', 'томат'], temp: [8, 10.5, 16, 20], moist: 0.40, slope: [3, 8], sowTemp: 14 },
-    cucumber:  { group: 'veg', name: { ru: 'Огурцы', ky: 'Бадыраң' }, alias: ['огурец'], temp: [8, 10, 15, 19], moist: 0.45, slope: [3, 7], sowTemp: 15 },
-    pepper:    { group: 'veg', name: { ru: 'Перец', ky: 'Калемпир' }, alias: ['болгарский перец'], temp: [9, 11, 16, 20], moist: 0.42, slope: [3, 7], sowTemp: 15 },
-    onion:     { group: 'veg', name: { ru: 'Лук', ky: 'Пияз' }, temp: [4, 7, 13, 17], moist: 0.35, slope: [3, 8], sowTemp: 7 },
-    garlic:    { group: 'veg', name: { ru: 'Чеснок', ky: 'Сарымсак' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [4, 9], sowTemp: 5 },
-    carrot:    { group: 'veg', name: { ru: 'Морковь', ky: 'Сабиз' }, temp: [3, 6, 12, 16], moist: 0.35, slope: [4, 9], sowTemp: 7 },
-    cabbage:   { group: 'veg', name: { ru: 'Капуста', ky: 'Капуста' }, temp: [2, 5, 11, 15], moist: 0.45, slope: [4, 9], sowTemp: 6 },
-    melon:     { group: 'veg', name: { ru: 'Дыня', ky: 'Коон' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
-    watermelon:{ group: 'veg', name: { ru: 'Арбуз', ky: 'Дарбыз' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
-    alfalfa:   { group: 'fodder', name: { ru: 'Люцерна', ky: 'Беде' }, temp: [4, 7, 15, 19], moist: 0.25, slope: [8, 15], sowTemp: 7 },
-    sainfoin:  { group: 'fodder', name: { ru: 'Эспарцет', ky: 'Эспарцет' }, temp: [2, 5, 12, 16], moist: 0.18, slope: [10, 20], sowTemp: 6 },
-    clover:    { group: 'fodder', name: { ru: 'Клевер', ky: 'Клевер' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 14], sowTemp: 6 },
-    strawberry:{ group: 'garden', perennial: true, name: { ru: 'Клубника', ky: 'Кулпунай' }, alias: ['земляника', 'садовая земляника'], temp: [4, 6.5, 12, 16], moist: 0.40, slope: [3, 8], sowTemp: 8 },
-    grapes:    { group: 'garden', perennial: true, name: { ru: 'Виноград', ky: 'Жүзүм' }, temp: [9, 11, 16, 20], moist: 0.25, slope: [6, 18], sowTemp: 10 },
-    cherry:    { group: 'garden', perennial: true, name: { ru: 'Вишня', ky: 'Чие' }, temp: [4, 6.5, 12, 16], moist: 0.30, slope: [8, 18], sowTemp: 5 },
-    sweetcherry:{ group: 'garden', perennial: true, name: { ru: 'Черешня', ky: 'Гилас' }, temp: [8, 10, 15, 19], moist: 0.32, slope: [8, 18], sowTemp: 7 },
-    pear:      { group: 'garden', perennial: true, name: { ru: 'Груша', ky: 'Алмурут' }, temp: [6, 8.5, 14, 18], moist: 0.35, slope: [8, 18], sowTemp: 5 },
-    plum:      { group: 'garden', perennial: true, name: { ru: 'Слива', ky: 'Кара өрүк' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
-    peach:     { group: 'garden', perennial: true, name: { ru: 'Персик', ky: 'Шабдалы' }, temp: [9.5, 11.5, 16, 20], moist: 0.30, slope: [8, 18], sowTemp: 7 },
-    walnut:    { group: 'garden', perennial: true, name: { ru: 'Грецкий орех', ky: 'Жаңгак' }, alias: ['орех'], temp: [8, 10, 15, 19], moist: 0.30, slope: [10, 25], sowTemp: 7 },
-    currant:   { group: 'garden', perennial: true, name: { ru: 'Смородина', ky: 'Карагат' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 15], sowTemp: 5 },
-    seabuckthorn:{ group: 'garden', perennial: true, name: { ru: 'Облепиха', ky: 'Чычырканак' }, temp: [0, 3, 10, 14], moist: 0.25, slope: [8, 20], sowTemp: 5 }
+    oats:      { group: 'grain', name: { ru: 'Овёс', ky: 'Сулу', en: 'Oats' }, temp: [2.5, 5, 11, 15], moist: 0.30, slope: [6, 14], sowTemp: 5 },
+    rye:       { group: 'grain', name: { ru: 'Рожь', ky: 'Кара буудай', en: 'Rye' }, temp: [1, 4, 11, 15], moist: 0.22, slope: [6, 15], sowTemp: 5 },
+    rice:      { group: 'grain', name: { ru: 'Рис', ky: 'Күрүч', en: 'Rice' }, temp: [10, 12, 17, 22], moist: 0.60, slope: [1, 3], sowTemp: 13 },
+    buckwheat: { group: 'grain', name: { ru: 'Гречиха', ky: 'Гречка', en: 'Buckwheat' }, alias: ['гречка'], temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 12], sowTemp: 10 },
+    tobacco:   { group: 'industrial', name: { ru: 'Табак', ky: 'Тамеки', en: 'Tobacco' }, temp: [10, 12, 17, 21], moist: 0.38, slope: [3, 8], sowTemp: 15 },
+    soy:       { group: 'veg', name: { ru: 'Соя', ky: 'Соя', en: 'Soybean' }, temp: [8, 10, 15, 19], moist: 0.40, slope: [3, 8], sowTemp: 12 },
+    peas:      { group: 'veg', name: { ru: 'Горох', ky: 'Буурчак', en: 'Peas' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [5, 10], sowTemp: 5 },
+    chickpea:  { group: 'veg', name: { ru: 'Нут', ky: 'Нокот', en: 'Chickpea' }, temp: [8, 10, 16, 20], moist: 0.18, slope: [4, 10], sowTemp: 8 },
+    tomato:    { group: 'veg', name: { ru: 'Томаты', ky: 'Помидор', en: 'Tomatoes' }, alias: ['помидоры', 'помидор', 'томат'], temp: [8, 10.5, 16, 20], moist: 0.40, slope: [3, 8], sowTemp: 14 },
+    cucumber:  { group: 'veg', name: { ru: 'Огурцы', ky: 'Бадыраң', en: 'Cucumbers' }, alias: ['огурец'], temp: [8, 10, 15, 19], moist: 0.45, slope: [3, 7], sowTemp: 15 },
+    pepper:    { group: 'veg', name: { ru: 'Перец', ky: 'Калемпир', en: 'Pepper' }, alias: ['болгарский перец'], temp: [9, 11, 16, 20], moist: 0.42, slope: [3, 7], sowTemp: 15 },
+    onion:     { group: 'veg', name: { ru: 'Лук', ky: 'Пияз', en: 'Onion' }, temp: [4, 7, 13, 17], moist: 0.35, slope: [3, 8], sowTemp: 7 },
+    garlic:    { group: 'veg', name: { ru: 'Чеснок', ky: 'Сарымсак', en: 'Garlic' }, temp: [3, 6, 12, 16], moist: 0.30, slope: [4, 9], sowTemp: 5 },
+    carrot:    { group: 'veg', name: { ru: 'Морковь', ky: 'Сабиз', en: 'Carrot' }, temp: [3, 6, 12, 16], moist: 0.35, slope: [4, 9], sowTemp: 7 },
+    cabbage:   { group: 'veg', name: { ru: 'Капуста', ky: 'Капуста', en: 'Cabbage' }, temp: [2, 5, 11, 15], moist: 0.45, slope: [4, 9], sowTemp: 6 },
+    melon:     { group: 'veg', name: { ru: 'Дыня', ky: 'Коон', en: 'Melon' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
+    watermelon:{ group: 'veg', name: { ru: 'Арбуз', ky: 'Дарбыз', en: 'Watermelon' }, temp: [10, 12, 18, 22], moist: 0.25, slope: [3, 8], sowTemp: 15 },
+    alfalfa:   { group: 'fodder', name: { ru: 'Люцерна', ky: 'Беде', en: 'Alfalfa' }, temp: [4, 7, 15, 19], moist: 0.25, slope: [8, 15], sowTemp: 7 },
+    sainfoin:  { group: 'fodder', name: { ru: 'Эспарцет', ky: 'Эспарцет', en: 'Sainfoin' }, temp: [2, 5, 12, 16], moist: 0.18, slope: [10, 20], sowTemp: 6 },
+    clover:    { group: 'fodder', name: { ru: 'Клевер', ky: 'Клевер', en: 'Clover' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 14], sowTemp: 6 },
+    strawberry:{ group: 'garden', perennial: true, name: { ru: 'Клубника', ky: 'Кулпунай', en: 'Strawberry' }, alias: ['земляника', 'садовая земляника'], temp: [4, 6.5, 12, 16], moist: 0.40, slope: [3, 8], sowTemp: 8 },
+    grapes:    { group: 'garden', perennial: true, name: { ru: 'Виноград', ky: 'Жүзүм', en: 'Grapes' }, temp: [9, 11, 16, 20], moist: 0.25, slope: [6, 18], sowTemp: 10 },
+    cherry:    { group: 'garden', perennial: true, name: { ru: 'Вишня', ky: 'Чие', en: 'Sour cherry' }, temp: [4, 6.5, 12, 16], moist: 0.30, slope: [8, 18], sowTemp: 5 },
+    sweetcherry:{ group: 'garden', perennial: true, name: { ru: 'Черешня', ky: 'Гилас', en: 'Sweet cherry' }, temp: [8, 10, 15, 19], moist: 0.32, slope: [8, 18], sowTemp: 7 },
+    pear:      { group: 'garden', perennial: true, name: { ru: 'Груша', ky: 'Алмурут', en: 'Pear' }, temp: [6, 8.5, 14, 18], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    plum:      { group: 'garden', perennial: true, name: { ru: 'Слива', ky: 'Кара өрүк', en: 'Plum' }, temp: [5, 7.5, 13, 17], moist: 0.35, slope: [8, 18], sowTemp: 5 },
+    peach:     { group: 'garden', perennial: true, name: { ru: 'Персик', ky: 'Шабдалы', en: 'Peach' }, temp: [9.5, 11.5, 16, 20], moist: 0.30, slope: [8, 18], sowTemp: 7 },
+    walnut:    { group: 'garden', perennial: true, name: { ru: 'Грецкий орех', ky: 'Жаңгак', en: 'Walnut' }, alias: ['орех'], temp: [8, 10, 15, 19], moist: 0.30, slope: [10, 25], sowTemp: 7 },
+    currant:   { group: 'garden', perennial: true, name: { ru: 'Смородина', ky: 'Карагат', en: 'Currant' }, temp: [2, 4.5, 10, 14], moist: 0.40, slope: [6, 15], sowTemp: 5 },
+    seabuckthorn:{ group: 'garden', perennial: true, name: { ru: 'Облепиха', ky: 'Чычырканак', en: 'Sea buckthorn' }, temp: [0, 3, 10, 14], moist: 0.25, slope: [8, 20], sowTemp: 5 }
   },
 
   // Пригодность: ≥ 0,7 — подходит, ≥ 0,35 — с условиями; сухое место с поливом не выше 0,6
@@ -3792,8 +4063,8 @@ const CONFIG = {
   fields: [
     {
       id: 'tokmok',
-      place: { ru: 'Токмок', ky: 'Токмок' },
-      name: { ru: 'Поле №1 — Токмок', ky: '№1 талаа — Токмок' },
+      place: { ru: 'Токмок', ky: 'Токмок', en: 'Tokmok' },
+      name: { ru: 'Поле №1 — Токмок', ky: '№1 талаа — Токмок', en: 'Field #1 — Tokmok' },
       crop: 'wheat',
       areaHa: 6, lat: 42.8372, lon: 75.3565, elevation: 857, slope: 0.4,
       tempOffset: -0.59,   // по высоте поля: −6,5 °C на километр
@@ -3802,8 +4073,8 @@ const CONFIG = {
     },
     {
       id: 'kant',
-      place: { ru: 'Кант', ky: 'Кант' },
-      name: { ru: 'Поле №2 — Кант', ky: '№2 талаа — Кант' },
+      place: { ru: 'Кант', ky: 'Кант', en: 'Kant' },
+      name: { ru: 'Поле №2 — Кант', ky: '№2 талаа — Кант', en: 'Field #2 — Kant' },
       crop: 'beet',
       areaHa: 48, lat: 42.9131, lon: 74.8876, elevation: 720, slope: 0.4,
       tempOffset: 0.26,   // по высоте поля: −6,5 °C на километр
@@ -3812,8 +4083,8 @@ const CONFIG = {
     },
     {
       id: 'kemin',
-      place: { ru: 'Кемин', ky: 'Кемин' },
-      name: { ru: 'Поле №3 — Кемин', ky: '№3 талаа — Кемин' },
+      place: { ru: 'Кемин', ky: 'Кемин', en: 'Kemin' },
+      name: { ru: 'Поле №3 — Кемин', ky: '№3 талаа — Кемин', en: 'Field #3 — Kemin' },
       crop: 'barley',
       areaHa: 53, lat: 42.782, lon: 75.6167, elevation: 1058, slope: 0.5,
       tempOffset: -1.86,   // по высоте поля: −6,5 °C на километр
@@ -3863,63 +4134,71 @@ const CONFIG = {
   missions: [
     {
       id: 'smap', icon: '💧', title: 'SMAP', link: '#summaryGrid',
-      sub: { ru: 'Soil Moisture Active Passive · на орбите с 2015 года', ky: 'Soil Moisture Active Passive · 2015-жылдан бери орбитада' },
-      question: { ru: 'Поливать ли сегодня?', ky: 'Бүгүн сугаруу керекпи?' },
+      sub: { ru: 'Soil Moisture Active Passive · на орбите с 2015 года', ky: 'Soil Moisture Active Passive · 2015-жылдан бери орбитада', en: 'Soil Moisture Active Passive · in orbit since 2015' },
+      question: { ru: 'Поливать ли сегодня?', ky: 'Бүгүн сугаруу керекпи?', en: 'Should I irrigate today?' },
       how: {
         ru: 'Влажная почва «светится» в микроволнах слабее сухой. Радиометр SMAP ловит это излучение с высоты 685 км — сквозь облака, днём и ночью.',
-        ky: 'Нымдуу топурак микротолкундарда кургак топуракка караганда алсызыраак «жаркырайт». SMAP радиометри бул нурланууну 685 км бийиктиктен кармайт — булут аркылуу, күндүз да, түнү да.'
+        ky: 'Нымдуу топурак микротолкундарда кургак топуракка караганда алсызыраак «жаркырайт». SMAP радиометри бул нурланууну 685 км бийиктиктен кармайт — булут аркылуу, күндүз да, түнү да.',
+        en: 'Moist soil “glows” more faintly in microwaves than dry soil. The SMAP radiometer catches this emission from 685 km up — through clouds, day and night.'
       },
       gives: {
         ru: 'Влажность верхних 5 см почвы, а модель L4 пересчитывает её на корневой слой до 1 м. Видно, когда влаги станет мало, ещё до того как растения завянут.',
-        ky: 'Топурактын үстүңкү 5 см нымдуулугу, ал эми L4 модели аны 1 м чейинки тамыр катмарына кайра эсептейт. Өсүмдүктөр соолуганга чейин эле нымдуулук азайганы көрүнөт.'
+        ky: 'Топурактын үстүңкү 5 см нымдуулугу, ал эми L4 модели аны 1 м чейинки тамыр катмарына кайра эсептейт. Өсүмдүктөр соолуганга чейин эле нымдуулук азайганы көрүнөт.',
+        en: 'Moisture of the top 5 cm of soil, which the L4 model extends to the root zone down to 1 m. You see moisture running low before plants wilt.'
       },
-      used: { ru: 'совет по поливу', ky: 'сугаруу боюнча кеңеш' },
-      spec: { ru: '9 км · каждые 2–3 дня', ky: '9 км · ар 2–3 күндө' }
+      used: { ru: 'совет по поливу', ky: 'сугаруу боюнча кеңеш', en: 'irrigation advice' },
+      spec: { ru: '9 км · каждые 2–3 дня', ky: '9 км · ар 2–3 күндө', en: '9 km · every 2–3 days' }
     },
     {
-      id: 'modis', icon: '🌱', title: 'MODIS и Landsat', link: '#zonesCard',
-      sub: { ru: 'Спутники Terra, Aqua, Landsat 8 и 9', ky: 'Terra, Aqua, Landsat 8 жана 9 спутниктери' },
-      question: { ru: 'Здоровы ли посевы и где на поле проблема?', ky: 'Эгин сообу жана талаанын кайсы жеринде көйгөй бар?' },
+      id: 'modis', icon: '🌱', title: 'MODIS · Landsat', link: '#zonesCard',
+      sub: { ru: 'Спутники Terra, Aqua, Landsat 8 и 9', ky: 'Terra, Aqua, Landsat 8 жана 9 спутниктери', en: 'Terra, Aqua, Landsat 8 and 9 satellites' },
+      question: { ru: 'Здоровы ли посевы и где на поле проблема?', ky: 'Эгин сообу жана талаанын кайсы жеринде көйгөй бар?', en: 'Are the crops healthy, and where is the problem?' },
       how: {
         ru: 'Камеры снимают поле в красном и ближнем инфракрасном свете. Здоровый лист красный свет поглощает, а инфракрасный отражает — из этой разницы считается NDVI (пример выше).',
-        ky: 'Камералар талааны кызыл жана жакынкы инфракызыл жарыкта тартат. Соо жалбырак кызыл жарыкты сиңирет, инфракызылды чагылтат — ушул айырмадан NDVI эсептелет (жогорудагы мисал).'
+        ky: 'Камералар талааны кызыл жана жакынкы инфракызыл жарыкта тартат. Соо жалбырак кызыл жарыкты сиңирет, инфракызылды чагылтат — ушул айырмадан NDVI эсептелет (жогорудагы мисал).',
+        en: 'Cameras image the field in red and near-infrared light. A healthy leaf absorbs red and reflects infrared — NDVI is calculated from this difference (example above).'
       },
       gives: {
         ru: 'Карту здоровья посевов: где растения сильные, а где угнетены — от засухи, вредителей или вымерзания. Проблему видно раньше, чем глазом с края поля.',
-        ky: 'Эгиндин ден соолугунун картасы: өсүмдүктөр кайда күчтүү, кайда начар — кургакчылыктан, зыянкечтерден же үшүктөн. Көйгөй талаанын четинен көз менен көргөнгө чейин эле көрүнөт.'
+        ky: 'Эгиндин ден соолугунун картасы: өсүмдүктөр кайда күчтүү, кайда начар — кургакчылыктан, зыянкечтерден же үшүктөн. Көйгөй талаанын четинен көз менен көргөнгө чейин эле көрүнөт.',
+        en: 'A crop health map: where plants are strong and where they are stressed by drought, pests or frost. The problem shows up earlier than you would notice it from the field edge.'
       },
-      used: { ru: 'где на поле больные растения', ky: 'талаадагы ооруган өсүмдүктөр' },
-      spec: { ru: '250 м (MODIS) · 30 м (Landsat) · раз в 8–16 дней', ky: '250 м (MODIS) · 30 м (Landsat) · ар 8–16 күндө' }
+      used: { ru: 'где на поле больные растения', ky: 'талаадагы ооруган өсүмдүктөр', en: 'finding sick plants in the field' },
+      spec: { ru: '250 м (MODIS) · 30 м (Landsat) · раз в 8–16 дней', ky: '250 м (MODIS) · 30 м (Landsat) · ар 8–16 күндө', en: '250 m (MODIS) · 30 m (Landsat) · every 8–16 days' }
     },
     {
       id: 'power', icon: '🌡️', title: 'NASA POWER', link: '#sowCard',
-      sub: { ru: 'Спутники CERES и GPM + реанализ MERRA-2', ky: 'CERES жана GPM спутниктери + MERRA-2 реанализи' },
-      question: { ru: 'Когда сеять в этом году?', ky: 'Быйыл качан себүү керек?' },
+      sub: { ru: 'Спутники CERES и GPM + реанализ MERRA-2', ky: 'CERES жана GPM спутниктери + MERRA-2 реанализи', en: 'CERES and GPM satellites + MERRA-2 reanalysis' },
+      question: { ru: 'Когда сеять в этом году?', ky: 'Быйыл качан себүү керек?', en: 'When to sow this year?' },
       how: {
         ru: 'Объединяет спутниковые измерения солнечной радиации и осадков с моделью атмосферы — получается непрерывный ряд погоды для любой точки Земли с 1981 года.',
-        ky: 'Күн радиациясынын жана жаан-чачындын спутниктик өлчөөлөрүн атмосфера модели менен бириктирет — 1981-жылдан бери Жердин каалаган чекити үчүн үзгүлтүксүз аба ырайы катары алынат.'
+        ky: 'Күн радиациясынын жана жаан-чачындын спутниктик өлчөөлөрүн атмосфера модели менен бириктирет — 1981-жылдан бери Жердин каалаган чекити үчүн үзгүлтүксүз аба ырайы катары алынат.',
+        en: 'Combines satellite measurements of solar radiation and precipitation with an atmospheric model — giving a continuous weather record for any point on Earth since 1981.'
       },
       gives: {
         ru: 'Суточную температуру и осадки за 40 лет. По ним видно, когда почва прогревается для вашей культуры и насколько раньше стал начинаться сезон.',
-        ky: '40 жылдык суткалык температура жана жаан-чачын. Алар боюнча топурак өсүмдүгүңүз үчүн качан жылыганы жана сезон канчалык эрте башталып калганы көрүнөт.'
+        ky: '40 жылдык суткалык температура жана жаан-чачын. Алар боюнча топурак өсүмдүгүңүз үчүн качан жылыганы жана сезон канчалык эрте башталып калганы көрүнөт.',
+        en: 'Daily temperature and precipitation for 40 years. They show when the soil warms up for your crop and how much earlier the season now starts.'
       },
-      used: { ru: 'когда сеять', ky: 'качан себүү' },
-      spec: { ru: '~50 км · каждый день · с 1981 года', ky: '~50 км · күн сайын · 1981-жылдан' }
+      used: { ru: 'когда сеять', ky: 'качан себүү', en: 'sowing dates' },
+      spec: { ru: '~50 км · каждый день · с 1981 года', ky: '~50 км · күн сайын · 1981-жылдан', en: '~50 km · daily · since 1981' }
     },
     {
       id: 'srtm', icon: '⛰️', title: 'SRTM / NASADEM', link: '#sec-demo',
-      sub: { ru: 'Радарная съёмка с шаттла Endeavour, 2000 год', ky: 'Endeavour шаттлынан радардык тартуу, 2000-жыл' },
-      question: { ru: 'Где на моей земле можно сажать?', ky: 'Жеримдин кайсы жерине себүүгө болот?' },
+      sub: { ru: 'Радарная съёмка с шаттла Endeavour, 2000 год', ky: 'Endeavour шаттлынан радардык тартуу, 2000-жыл', en: 'Radar survey from the Space Shuttle Endeavour, 2000' },
+      question: { ru: 'Где на моей земле можно сажать?', ky: 'Жеримдин кайсы жерине себүүгө болот?', en: 'Where on my land can I plant?' },
       how: {
         ru: 'За 11 дней радар шаттла снял высоту почти всей суши Земли. NASADEM — обновлённая NASA версия этой карты высот.',
-        ky: 'Шаттлдын радары 11 күндө Жер кургактыгынын дээрлик баарынын бийиктигин тарткан. NASADEM — бул бийиктик картасынын NASA жаңырткан версиясы.'
+        ky: 'Шаттлдын радары 11 күндө Жер кургактыгынын дээрлик баарынын бийиктигин тарткан. NASADEM — бул бийиктик картасынын NASA жаңырткан версиясы.',
+        en: 'In 11 days the shuttle’s radar mapped the height of almost all of Earth’s land. NASADEM is NASA’s updated version of this elevation map.'
       },
       gives: {
         ru: 'Высоту и крутизну склонов. На каждые 100 м вверх в среднем на 0,65 °C холоднее, а на крутых склонах тяжело технике и дожди смывают почву. Вместе с климатом и влагой это даёт слой «Где сажать».',
-        ky: 'Бийиктик жана эңкейиштердин тиктиги. Ар 100 м өйдө орточо 0,65 °C суугураак, ал эми тик эңкейиштерде техника кыйналат жана жаан топуракты жууп кетет. Климат жана нымдуулук менен бирге бул «Кайда себүү» катмарын берет.'
+        ky: 'Бийиктик жана эңкейиштердин тиктиги. Ар 100 м өйдө орточо 0,65 °C суугураак, ал эми тик эңкейиштерде техника кыйналат жана жаан топуракты жууп кетет. Климат жана нымдуулук менен бирге бул «Кайда себүү» катмарын берет.',
+        en: 'Elevation and slope steepness. Every 100 m up is on average 0.65 °C colder, and on steep slopes machinery struggles and rain washes soil away. Together with climate and moisture this gives the “Where to plant” layer.'
       },
-      used: { ru: 'карта «Где сажать»', ky: '«Кайда себүү» картасы' },
-      spec: { ru: '30 м · вся суша от 60° с. ш. до 56° ю. ш.', ky: '30 м · 60° т. к. – 56° т. к. аралыгындагы бардык кургактык' }
+      used: { ru: 'карта «Где сажать»', ky: '«Кайда себүү» картасы', en: 'the “Where to plant” map' },
+      spec: { ru: '30 м · вся суша от 60° с. ш. до 56° ю. ш.', ky: '30 м · 60° т. к. – 56° т. к. аралыгындагы бардык кургактык', en: '30 m · all land from 60° N to 56° S' }
     }
   ]
 };
