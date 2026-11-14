@@ -7,7 +7,7 @@
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 
-const UA = 'AgroPulseBot/0.1 (hackathon prototype; https://github.com/nurai003002/AgroPulse)';
+const UA = 'AgroPulseBot/0.1 (hackathon prototype; https://github.com/nurai003002/AgroPluse)';
 const CACHE_DIR = path.resolve(process.env.DATA_DIR || 'data', 'cache');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
